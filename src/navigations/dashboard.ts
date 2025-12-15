@@ -5,23 +5,25 @@ import {
   ArrowDownToLine,
   BarChart3,
   User,
+  LayoutDashboard,
+  Banknote,
 } from "lucide-react";
 
 export const dashboardNavItems: NavLinks[] = [
   {
-    title: "Investments",
-    href: "/dashboard/investments",
-    icon: TrendingUp,
+    title: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
   },
   {
-    title: "Wallet",
-    href: "/dashboard/wallet",
+    title: "Deposits",
+    href: "/dashboard/deposits",
     icon: Wallet,
   },
   {
-    title: "ROI",
-    href: "/dashboard/roi",
-    icon: BarChart3,
+    title: "Transactions",
+    href: "/dashboard/transactions",
+    icon: Banknote,
   },
   {
     title: "Withdrawals",
@@ -29,8 +31,8 @@ export const dashboardNavItems: NavLinks[] = [
     icon: ArrowDownToLine,
   },
   {
-    title: "Profile",
-    href: "/dashboard/profile",
-    icon: User,
+    title: "Investments",
+    href: "/dashboard/investments",
+    icon: TrendingUp,
   },
 ];
