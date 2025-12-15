@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------
+// ENUMS (Minor Change: Removed PENDING_PAYMENT from InvestmentStatus)
+// ----------------------------------------
+
+enum UserRole {
+  USER
+}
+
+enum AdminRole {
+  ADMIN
+  SUPERADMIN
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  INTEREST
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+// Dedicated enum for payment status, separate from lifecycle
+enum PaymentStatus {
+  AWAITING_PROOF // Waiting for user to upload proof
+  PENDING_VERIFICATION // Proof uploaded, waiting for admin
+  VERIFIED // Payment confirmed
+  FAILED
+}
+
+enum InvestmentStatus {
+  CREATED // Initial state after request
+  ACTIVE
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum InvestorTier {
+  STARTER
+  GROWTH
+  PREMIUM
+  ELITE
+  EXECUTIVE
+}
+
+// ----------------------------------------
+// MODELS
+// ----------------------------------------
+
+// ********** USER ACCOUNT (INVESTORS) **********
+model User {
+  id           String   @id @default(uuid())
+  fullName     String
+  email        String   @unique
+  phone        String?  @unique
+  passwordHash String // KEPT for simplicity, but consider a UserCredentials table
+  role         UserRole @default(USER)
+
+  investorTier InvestorTier?
+
+  investments  Investment[]
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+// ********** ADMIN CREDENTIALS (NEW, FOR SECURITY) **********
+model AdminCredentials {
+  id      String @id @default(uuid())
+  adminId String @unique
+  admin   Admin  @relation(fields: [adminId], references: [id])
+
+  passwordHash   String
+  lastLogin      DateTime?
+  failedAttempts Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ********** ADMIN ACCOUNT (REFACTORED) **********
+model Admin {
+  id       String    @id @default(uuid())
+  fullName String
+  email    String    @unique
+  role     AdminRole @default(ADMIN)
+
+  credentials AdminCredentials? // Link to the new credentials table
+
+  // NEW: The reciprocal side of the Transaction relation, explicitly named
+  processedTransactions Transaction[] @relation(name: "TransactionProcessor")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+// ********** INVESTMENT CATEGORY PLAN **********
+model InvestmentCategory {
+  id             String  @id @default(uuid())
+  name           String  @unique
+  minAmount      Float
+  maxAmount      Float?
+  roiPercentage  Float
+  durationMonths Int
+  description    String?
+
+  investments Investment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ********** USER INVESTMENTS (REFACTORED STATUS) **********
+model Investment {
+  id     String @id @default(uuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  category   InvestmentCategory @relation(fields: [categoryId], references: [id])
+  categoryId String
+
+  amount         Float
+  expectedReturn Float
+  status         InvestmentStatus @default(CREATED) // Lifecycle status
+
+  // NEW: Separate tracking for payment process
+  paymentStatus     PaymentStatus @default(AWAITING_PROOF)
+  proofOfPaymentURL String?
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([status])
+}
+
+// ********** TRANSACTIONS (REFACTORED RELATION) **********
+model Transaction {
+  id String @id @default(uuid())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  investment   Investment? @relation(fields: [investmentId], references: [id])
+  investmentId String?
+
+  type   TransactionType
+  status TransactionStatus @default(PENDING)
+
+  amount   Float
+  proofURL String?
+
+  description String?
+
+  adminId     String?
+  // REFACTORED: Explicitly named the relation to avoid schema errors
+  processedBy Admin?  @relation(fields: [adminId], references: [id], name: "TransactionProcessor")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([investmentId])
+  @@index([adminId])
+  @@index([createdAt])
+}

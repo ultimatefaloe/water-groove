@@ -7,7 +7,7 @@ import { TrendingUp, Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { publicNavItems } from "@/config/navigations";
+import { publicNavItems } from "@/navigations";
 
 const Navbar = () => {
   const pathname = usePathname();
