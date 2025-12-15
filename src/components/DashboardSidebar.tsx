@@ -90,7 +90,7 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
                   : "text-neutral-700 hover:bg-neutral-100"
               )}
             >
-              <Icon className="h-4 w-4" />
+              {Icon && <Icon className="h-4 w-4" />}
               <span className="flex-1">{item.title}</span>
               {active && <ChevronRight className="h-4 w-4" />}
             </Link>
@@ -118,7 +118,7 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
                     : "text-neutral-700 hover:bg-neutral-100"
                 )}
               >
-                <Icon className="h-4 w-4" />
+                {Icon && <Icon className="h-4 w-4" />}
                 <span className="font-medium">{item.title}</span>
               </Link>
             );
