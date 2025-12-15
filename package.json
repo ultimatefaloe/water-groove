@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prisma:dev:mig": "prisma migrate deploy",
+    "db:dev:rm": "docker compose -f docker-compose.dev.yml rm -s -f -v",
+    "db:dev:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:dev:restart": "pnpm run db:dev:rm && pnpm run db:dev:up && sleep 2 && pnpm run prisma:dev:mig",
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
