@@ -17,6 +17,7 @@ import { Skeleton } from "./ui/skeleton";
 import { NavLinks } from "@/types/nav";
 import { useRouter } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
+import Image from "next/image";
 
 interface SidebarProps {
   pathname: string;
@@ -60,22 +61,21 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-screen flex-col fixed bg-sidebar">
       {/* Logo */}
-      <div className="px-6 py-5 border-b">
+      <div className="px-6 py-5 border-sidebar-border border-b bg-sidebar">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-neutral-900 text-white flex items-center justify-center">
-            <DollarSign className="h-5 w-5" />
-          </div>
-          <span className="text-lg font-bold">Water Groove</span>
+          <Image src="/logo_t.png" alt="WG_logo" width={50} height={50} />
+          <span className="text-lg font-bold text-wg-primary hover:text-wg-secondary">
+            Water Groove
+          </span>
         </Link>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+      {/* Main Navigation */}
+      <nav className="flex-1 overflow-y-auto p-3 space-y-1 bg-sidebar">
         {dashboardNavItems.map((item) => {
           const active = pathname === item.href;
-
           const Icon = item.icon;
 
           return (
@@ -84,10 +84,10 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
               href={item.href}
               onClick={onNavigate}
               className={clsx(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
                 active
-                  ? "bg-neutral-900 text-white"
-                  : "text-neutral-700 hover:bg-neutral-100"
+                  ? "bg-wg-primary text-wg-secondary"
+                  : "text-wg-primary hover:bg-wg-secondary/50 hover:text-wg-primary"
               )}
             >
               {Icon && <Icon className="h-4 w-4" />}
@@ -97,8 +97,10 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
           );
         })}
       </nav>
-      <div className="overflow-y-auto px-3 py-4">
-        <Separator className="my-4" />
+
+      {/* Secondary Section */}
+      <div className="overflow-y-auto px-3 py-4 bg-sidebar border-t border-sidebar-border">
+        <Separator className="my-4 bg-sidebar-border" />
 
         {/* Secondary Navigation */}
         <nav className="space-y-1">
@@ -112,11 +114,11 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
                 href={item.href}
                 onClick={onNavigate}
                 className={clsx(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
                   isActive
-                    ? "bg-neutral-900 text-white"
-                    : "text-neutral-700 hover:bg-neutral-100"
-                )}
+                  ? "bg-wg-primary text-wg-secondary"
+                  : "text-wg-primary hover:bg-wg-secondary/50 hover:text-wg-primary"
+              )}
               >
                 {Icon && <Icon className="h-4 w-4" />}
                 <span className="font-medium">{item.title}</span>
@@ -124,14 +126,15 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
             );
           })}
         </nav>
+
         {/* User Profile Section */}
         <div className="px-2 py-4">
           <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border-2 border-neutral-200">
+            <Avatar className="h-10 w-10 border-2 border-sidebar-border">
               {user?.picture ? (
                 <AvatarImage src={user.picture} alt={user.name || "User"} />
               ) : (
-                <AvatarFallback className="bg-neutral-800 text-white">
+                <AvatarFallback className="bg-sidebar-primary text-wg-secondary">
                   {user?.name ? getInitials(user.name) : "U"}
                 </AvatarFallback>
               )}
@@ -139,39 +142,44 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
             <div className="flex-1 min-w-0">
               {isLoading ? (
                 <>
-                  <Skeleton className="h-4 w-24 mb-2" />
-                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-4 w-24 mb-2 bg-sidebar-accent" />
+                  <Skeleton className="h-3 w-16 bg-sidebar-accent" />
                 </>
               ) : error ? (
                 <>
-                  <p className="text-sm font-medium text-neutral-900 truncate">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
                     Error loading user
                   </p>
-                  <p className="text-xs text-neutral-500">Please refresh</p>
+                  <p className="text-xs text-sidebar-foreground/60">
+                    Please refresh
+                  </p>
                 </>
               ) : user ? (
                 <>
-                  <p className="text-sm font-medium text-neutral-900 truncate">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
                     {user.name}
                   </p>
-                  <p className="text-xs text-neutral-500 truncate">
+                  <p className="text-xs text-sidebar-foreground/60 truncate">
                     {user.email}
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-medium text-neutral-900">Guest</p>
-                  <p className="text-xs text-neutral-500">Not signed in</p>
+                  <p className="text-sm font-medium text-sidebar-foreground">
+                    Guest
+                  </p>
+                  <p className="text-xs text-sidebar-foreground/60">
+                    Not signed in
+                  </p>
                 </>
               )}
             </div>
             {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-neutral-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+              className="flex items-center justify-center rounded-lg p-2 text-sm text-wg-secondary/70 hover:bg-destructive/10 hover:text-destructive transition-colors"
             >
               <LogOut className="h-4 w-4" />
-              {/* <span className="font-medium">Logout</span> */}
             </button>
           </div>
         </div>

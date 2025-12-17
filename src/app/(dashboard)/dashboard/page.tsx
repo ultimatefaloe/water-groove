@@ -1,9 +1,18 @@
-import React from 'react'
+import { Suspense } from "react";
+import { DashboardSkeleton } from "../_components/dashboard/DashboardSkeleton";
+import DashboardClient from "../_components/dashboard/DashboardClient";
+import { Metadata } from "next";
 
-const Dashboard = () => {
-  return (
-    <div>Welcome to Water Groove Dashboard</div>
-  )
+
+export const metadata: Metadata = {
+  title: "Dashboard | Water Groove",
+  description: "Secure your future with water groove investment"
 }
 
-export default Dashboard
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardClient />
+    </Suspense>
+  );
+}
