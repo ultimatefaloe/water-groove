@@ -1,8 +1,7 @@
-import { ComponentType } from "react";
-
 export type NavLinks = {
-  title: string;
-  href: string;
+  title: string
+  href: string
+  icon?: React.ElementType
+  badge?: string
   variant?: string
-  icon?: ComponentType<{ className?: string }>;
 };

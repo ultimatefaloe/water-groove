@@ -1,5 +1,4 @@
 import Navbar from "@/components/NavBar";
-import MobileBottomNav from "@/components/MobileNav";
 import { Footer } from "@/components/Footer";
 
 export default function RootLayout({
