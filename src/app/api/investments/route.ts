@@ -1,22 +1,16 @@
 export const runtime = "nodejs";
 
-
 import { NextResponse } from "next/server";
-import { getDbHealth } from "@/lib/prisma";
 
 export async function GET() {
   console.log('Endpoint reached')
-  const db = await getDbHealth();
-
-  const statusCode = db.status === "healthy" ? 200 : 503;
-
   return NextResponse.json(
     {
-      status: db.status,
+      status: 200,
       services: {
-        database: db,
+        database:'Endpoint reached',
       },
     },
-    { status: statusCode }
+    { status: 200 }
   );
 }

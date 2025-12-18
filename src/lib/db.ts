@@ -1,10 +1,10 @@
-import { prisma } from "./prisma";
+import { prisma } from './prisma';
 
 export const db = {
   user: prisma.user,
   admin: prisma.admin,
+  investmentCategory: prisma.investmentCategory,
   investment: prisma.investment,
-  category: prisma.investmentCategory,
   transaction: prisma.transaction,
 };
 
