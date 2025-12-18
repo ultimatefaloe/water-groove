@@ -1,30 +1,27 @@
+import "server-only";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from '@prisma/adapter-pg';
+import { config } from "./config";
 
-/**
- * ------------------------------------
- * Database Connection Check (Startup)
- * ------------------------------------
- */
+const adapter = new PrismaPg({
+  connectionString: config.DATABASE_URL!,
+});
+
+export const prisma = new PrismaClient({ adapter });
+export default prisma;
+
+
+
 export async function checkDbConnection(): Promise<void> {
   try {
-    // Lightweight, fast, safe query
     await prisma.$queryRaw`SELECT 1`;
-    console.info("✅ Database connection established");
+    console.info('✅ Database connection established');
   } catch (error) {
-    console.error("❌ Database connection failed", error);
-    throw error; // Fail fast in production
+    console.error('❌ Database connection failed', error);
+    throw error;
   }
 }
 
-/**
- * ------------------------------------
- * Database Health Check (Monitoring)
- * ------------------------------------
- * Can be used for:
- * - /api/health
- * - Kubernetes liveness/readiness
- * - Docker healthcheck
- * - Uptime monitoring
- */
 export async function getDbHealth() {
   const start = Date.now();
 
@@ -32,18 +29,18 @@ export async function getDbHealth() {
     await prisma.$queryRaw`SELECT 1`;
 
     return {
-      status: "healthy",
-      database: "postgresql",
+      status: 'healthy',
+      database: 'postgresql',
       latencyMs: Date.now() - start,
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
     return {
-      status: "unhealthy",
-      database: "postgresql",
+      status: 'unhealthy',
+      database: 'postgresql',
       latencyMs: null,
       timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
