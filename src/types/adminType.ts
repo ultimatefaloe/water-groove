@@ -4,7 +4,7 @@ import {
   InvestmentStatus,
   TransactionType,
   TransactionStatus,
-} from "./type"
+} from "@prisma/client"
 
 // ==============================
 // ADMIN CONTEXT
