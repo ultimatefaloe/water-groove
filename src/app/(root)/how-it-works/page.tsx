@@ -1,12 +1,13 @@
-import { Metadata } from "next"
+import React from 'react';
+import { Metadata } from 'next';
+import HowItWorksClient from '@/app/(root)/how-it-works/_components/HowItWorksClient';
 
-export const metadata: Metadata ={
-  title: "How it works | WG"
-}
-const HowItWorks = () => {
-  return (
-    <div>How it works</div>
-  )
-}
+export const metadata: Metadata = {
+  title: "How It Works | WG",
+};
 
-export default HowItWorks
+const HowItWorksPage = () => {
+  return <HowItWorksClient />;
+};
+
+export default HowItWorksPage;

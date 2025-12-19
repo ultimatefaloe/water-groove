@@ -1,13 +1,14 @@
-import { Metadata } from "next"
+import React from 'react';
+import { Metadata } from 'next';
+import HomeClient from '@/app/(root)/_components/HomeClient';
 
 export const metadata: Metadata = {
     title: "Home | Water Groove",
     description: "Welcome to Water Groove Investment Platform"
 }
 
-const Home = () => {
-    return (
-        <div>Welcome to Water Groove Investment platform</div>
-    )
-}
-export default Home
+const HomePage = () => {
+  return <HomeClient />;
+};
+
+export default HomePage;
