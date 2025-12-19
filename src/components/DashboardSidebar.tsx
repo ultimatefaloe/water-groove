@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   ChevronRight,
-  DollarSign,
   Headset,
   HelpCircle,
   LogOut,
@@ -11,7 +10,6 @@ import {
 } from "lucide-react";
 import { dashboardNavItems } from "@/navigations";
 import clsx from "clsx";
-import { Separator } from "./ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
 import { NavLinks } from "@/types/nav";
@@ -100,7 +98,6 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
 
       {/* Secondary Section */}
       <div className="overflow-y-auto px-3 py-4 bg-sidebar border-t border-sidebar-border">
-        <Separator className="my-4 bg-sidebar-border" />
 
         {/* Secondary Navigation */}
         <nav className="space-y-1">

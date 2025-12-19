@@ -1,13 +1,13 @@
-import { Metadata } from 'next'
+import React from 'react';
+import { Metadata } from 'next';
+import AboutClient from '@/app/(root)/about/_components/AboutClient';
 
 export const metadata: Metadata = {
-  title: "About Us | WG"
-}
+  title: "About Us | WG",
+};
 
-const AboutUs = () => {
-  return (
-    <div>About</div>
-  )
-}
+const AboutPage = () => {
+  return <AboutClient />;
+};
 
-export default AboutUs
+export default AboutPage;

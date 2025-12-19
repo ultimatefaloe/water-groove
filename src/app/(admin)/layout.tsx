@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createUserFromAuth0 } from "@/lib/server/createUserFromAuth0";
-import DashboardShell from "./dashboard/_components/DashboardShell";
+import AdminDashboardShell from "./_components/AdminDashboardShell";
 import { auth0 } from "@/lib/server/auth0";
 
 export default async function DashboardLayout({
@@ -18,5 +18,5 @@ export default async function DashboardLayout({
   // 👤 Ensure user exists in DB
   await createUserFromAuth0(session.user);
 
-  return <DashboardShell>{children}</DashboardShell>;
+  return <AdminDashboardShell>{children}</AdminDashboardShell>;
 }

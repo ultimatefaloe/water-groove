@@ -7,17 +7,30 @@ datasource db {
   // url      = env("DATABASE_URL")
 }
 
-// ----------------------------------------
-// ENUMS (Minor Change: Removed PENDING_PAYMENT from InvestmentStatus)
-// ----------------------------------------
-
-enum UserRole {
-  USER
-}
+// =======================================
+// ENUMS
+// =======================================
 
 enum AdminRole {
   ADMIN
   SUPERADMIN
+}
+
+enum InvestorTier {
+  STARTER
+  GROWTH
+  PREMIUM
+  ELITE
+  EXECUTIVE
+}
+
+enum InvestmentStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+  REJECTED
 }
 
 enum TransactionType {
@@ -33,44 +46,20 @@ enum TransactionStatus {
   PAID
 }
 
-// Dedicated enum for payment status, separate from lifecycle
-enum PaymentStatus {
-  AWAITING_PROOF // Waiting for user to upload proof
-  PENDING_VERIFICATION // Proof uploaded, waiting for admin
-  VERIFIED // Payment confirmed
-  FAILED
-}
-
-enum InvestmentStatus {
-  CREATED // Initial state after request
-  ACTIVE
-  COMPLETED
-  REJECTED
-  CANCELLED
-}
-
-enum InvestorTier {
-  STARTER
-  GROWTH
-  PREMIUM
-  ELITE
-  EXECUTIVE
-}
-
-// ----------------------------------------
+// =======================================
 // MODELS
-// ----------------------------------------
+// =======================================
 
-// ********** USER ACCOUNT (INVESTORS) **********
 model User {
-  id           String   @id @default(uuid())
-  fullName     String
-  email        String   @unique
-  phone        String?  @unique
-  passwordHash String // KEPT for simplicity, but consider a UserCredentials table
-  role         UserRole @default(USER)
+  id       String  @id @default(uuid())
+  auth0Id  String  @unique
+  fullName String
+  email    String  @unique
+  phone    String? @unique
+  picture  String?
 
   investorTier InvestorTier?
+  isActive     Boolean       @default(true)
 
   investments  Investment[]
   transactions Transaction[]
@@ -79,75 +68,74 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([email])
+  @@index([investorTier])
 }
 
-// ********** ADMIN CREDENTIALS (NEW, FOR SECURITY) **********
-model AdminCredentials {
-  id      String @id @default(uuid())
-  adminId String @unique
-  admin   Admin  @relation(fields: [adminId], references: [id])
-
-  passwordHash   String
-  lastLogin      DateTime?
-  failedAttempts Int       @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// ********** ADMIN ACCOUNT (REFACTORED) **********
 model Admin {
-  id       String    @id @default(uuid())
-  fullName String
-  email    String    @unique
-  role     AdminRole @default(ADMIN)
+  id           String    @id @default(uuid())
+  fullName     String
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(ADMIN)
+  isActive     Boolean   @default(true)
 
-  credentials AdminCredentials? // Link to the new credentials table
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
 
-  // NEW: The reciprocal side of the Transaction relation, explicitly named
-  processedTransactions Transaction[] @relation(name: "TransactionProcessor")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  processedTxns Transaction[]        @relation("AdminTransactions")
+  approvedInv   Investment[]         @relation("AdminInvestments")
+  createdCats   InvestmentCategory[]
 
   @@index([email])
+  @@index([role])
 }
 
-// ********** INVESTMENT CATEGORY PLAN **********
 model InvestmentCategory {
-  id             String  @id @default(uuid())
-  name           String  @unique
-  minAmount      Float
-  maxAmount      Float?
-  roiPercentage  Float
+  id   String @id @default(uuid())
+  name String @unique
+
+  minAmount Decimal  @db.Decimal(15, 2)
+  maxAmount Decimal? @db.Decimal(15, 2)
+
+  monthlyRoiRate Decimal @db.Decimal(5, 2)
   durationMonths Int
-  description    String?
+
+  description String?
+  isActive    Boolean @default(true)
+
+  createdByAdminId String
+  createdByAdmin   Admin  @relation(fields: [createdByAdminId], references: [id])
 
   investments Investment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([isActive])
 }
 
-// ********** USER INVESTMENTS (REFACTORED STATUS) **********
 model Investment {
-  id     String @id @default(uuid())
-  user   User   @relation(fields: [userId], references: [id])
+  id String @id @default(uuid())
+
   userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  category   InvestmentCategory @relation(fields: [categoryId], references: [id])
   categoryId String
+  category   InvestmentCategory @relation(fields: [categoryId], references: [id])
 
-  amount         Float
-  expectedReturn Float
-  status         InvestmentStatus @default(CREATED) // Lifecycle status
+  principalAmount Decimal @db.Decimal(15, 2)
 
-  // NEW: Separate tracking for payment process
-  paymentStatus     PaymentStatus @default(AWAITING_PROOF)
-  proofOfPaymentURL String?
+  roiRateSnapshot Decimal @db.Decimal(5, 2)
+  durationMonths  Int
+
+  status InvestmentStatus @default(PENDING_PAYMENT)
 
   startDate DateTime?
   endDate   DateTime?
+
+  approvedByAdminId String?
+  approvedByAdmin   Admin?  @relation("AdminInvestments", fields: [approvedByAdminId], references: [id])
 
   transactions Transaction[]
 
@@ -157,37 +145,36 @@ model Investment {
   @@index([userId])
   @@index([categoryId])
   @@index([status])
+  @@index([startDate])
 }
 
-// ********** TRANSACTIONS (REFACTORED RELATION) **********
 model Transaction {
   id String @id @default(uuid())
 
-  user   User   @relation(fields: [userId], references: [id])
   userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  investment   Investment? @relation(fields: [investmentId], references: [id])
   investmentId String?
+  investment   Investment? @relation(fields: [investmentId], references: [id])
 
   type   TransactionType
   status TransactionStatus @default(PENDING)
 
-  amount   Float
-  proofURL String?
-
+  amount      Decimal @db.Decimal(15, 2)
+  proofUrl    String?
   description String?
 
-  adminId     String?
-  // REFACTORED: Explicitly named the relation to avoid schema errors
-  processedBy Admin?  @relation(fields: [adminId], references: [id], name: "TransactionProcessor")
+  processedByAdminId String?
+  processedByAdmin   Admin?  @relation("AdminTransactions", fields: [processedByAdminId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([userId])
   @@index([type])
   @@index([status])
   @@index([investmentId])
-  @@index([adminId])
+  @@index([processedByAdminId])
   @@index([createdAt])
 }
