@@ -32,8 +32,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   INVESTMENT_CATEGORIES,
   BankDetails,
-  TransactionType,
-} from "@/types/invesment";
+} from "@/types/type";
 import {
   depositFormSchema,
   DepositFormValues,
@@ -189,8 +188,8 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
                               <span className="text-xs text-muted-foreground">
                                 {
                                   INVESTMENT_CATEGORIES.find(
-                                    (cat) => cat.value === investment.category
-                                  )?.label
+                                    (cat) => cat.id === investment.category
+                                  )?.name
                                 }
                               </span>
                             </div>

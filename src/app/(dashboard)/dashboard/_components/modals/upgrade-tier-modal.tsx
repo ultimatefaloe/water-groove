@@ -19,24 +19,24 @@ import {
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardContent } from "@/components/ui/card";
-import { INVESTMENT_CATEGORIES, InvestmentCategory } from "@/types/invesment";
+import { INVESTMENT_CATEGORIES } from "@/types/type";
 import { DepositModal } from "./deposit-modal";
 import { UpgradeFormValues, upgradeFormSchema } from "@/lib/zod";
+import { InvestorTier } from "@prisma/client";
 
 interface UpgradeTierModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentTier?: InvestmentCategory;
+  currentTier?: InvestorTier;
 }
 
 export function UpgradeTierModal({
   isOpen,
   onClose,
-  currentTier = InvestmentCategory.STARTER,
+  currentTier,
 }: UpgradeTierModalProps) {
   const [selectedCategory, setSelectedCategory] =
-    useState<InvestmentCategory | null>(null);
+    useState<InvestorTier | null>(null);
   const [showDepositModal, setShowDepositModal] = useState(false);
 
   const form = useForm<UpgradeFormValues>({
@@ -44,40 +44,40 @@ export function UpgradeTierModal({
   });
 
   const handleSubmit = (data: UpgradeFormValues) => {
-    setSelectedCategory(data.investmentCategory);
+    setSelectedCategory(data.investorTier);
     form.reset();
     onClose();
     setShowDepositModal(true);
   };
 
-  const getTierIcon = (tier: InvestmentCategory) => {
+  const getTierIcon = (tier: InvestorTier) => {
     switch (tier) {
-      case InvestmentCategory.STARTER:
+      case InvestorTier.STARTER:
         return <Star className="h-5 w-5" />;
-      case InvestmentCategory.GROWTH:
+      case InvestorTier.GROWTH:
         return <TrendingUp className="h-5 w-5" />;
-      case InvestmentCategory.PREMIUM:
+      case InvestorTier.PREMIUM:
         return <Zap className="h-5 w-5" />;
-      case InvestmentCategory.ELITE:
+      case InvestorTier.ELITE:
         return <Shield className="h-5 w-5" />;
-      case InvestmentCategory.EXECUTIVE:
+      case InvestorTier.EXECUTIVE:
         return <Crown className="h-5 w-5" />;
       default:
         return <Star className="h-5 w-5" />;
     }
   };
 
-  const getTierColor = (tier: InvestmentCategory) => {
+  const getTierColor = (tier: InvestorTier) => {
     switch (tier) {
-      case InvestmentCategory.STARTER:
+      case InvestorTier.STARTER:
         return "border-blue-200 bg-blue-50";
-      case InvestmentCategory.GROWTH:
+      case InvestorTier.GROWTH:
         return "border-green-200 bg-green-50";
-      case InvestmentCategory.PREMIUM:
+      case InvestorTier.PREMIUM:
         return "border-purple-200 bg-purple-50";
-      case InvestmentCategory.ELITE:
+      case InvestorTier.ELITE:
         return "border-amber-200 bg-amber-50";
-      case InvestmentCategory.EXECUTIVE:
+      case InvestorTier.EXECUTIVE:
         return "border-red-200 bg-red-50";
       default:
         return "";
@@ -98,14 +98,14 @@ export function UpgradeTierModal({
           <div className="p-4 sm:p-5 border rounded-lg">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
-                {getTierIcon(currentTier)}
+                {getTierIcon(currentTier!)}
                 <div>
                   <p className="text-sm text-muted-foreground">Current Tier</p>
                   <p className="font-semibold break-words">
                     {
                       INVESTMENT_CATEGORIES.find(
-                        (cat) => cat.value === currentTier
-                      )?.label
+                        (cat) => cat.id === currentTier
+                      )?.name
                     }
                   </p>
                 </div>
@@ -124,7 +124,7 @@ export function UpgradeTierModal({
               {/* Tier Selection */}
               <FormField
                 control={form.control}
-                name="investmentCategory"
+                name="investorTier"
                 render={({ field }) => (
                   <FormItem className="space-y-4">
                     <FormLabel>Select New Investment Tier</FormLabel>
@@ -135,34 +135,34 @@ export function UpgradeTierModal({
                         className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                       >
                         {INVESTMENT_CATEGORIES.map((category) => {
-                          const isCurrent = currentTier === category.value;
+                          const isCurrent = currentTier === category.id;
 
                           const currentMin =
                             INVESTMENT_CATEGORIES.find(
-                              (c) => c.value === currentTier
+                              (c) => c.id === currentTier
                             )?.minAmount ?? 0;
 
                           const isHigher = category.minAmount > currentMin;
 
                           return (
-                            <FormItem key={category.value} className="relative">
+                            <FormItem key={category.id} className="relative">
                               <FormControl>
                                 <RadioGroupItem
-                                  value={category.value}
-                                  id={category.value}
+                                  value={category.name}
+                                  id={category.id}
                                   className="sr-only"
                                   disabled={!isHigher}
                                 />
                               </FormControl>
 
                               <FormLabel
-                                htmlFor={category.value}
+                                htmlFor={category.id}
                                 className={`
                             relative flex flex-col h-full p-4 sm:p-5 border rounded-lg
                             cursor-pointer transition-all
-                            ${getTierColor(category.value)}
+                            ${getTierColor(category.id as InvestorTier)}
                             ${
-                              field.value === category.value
+                              field.value === category.id
                                 ? "ring-2 ring-primary"
                                 : ""
                             }
@@ -175,9 +175,9 @@ export function UpgradeTierModal({
                               >
                                 <div className="flex items-start justify-between gap-2 mb-2">
                                   <div className="flex items-center gap-2">
-                                    {getTierIcon(category.value)}
+                                    {getTierIcon(category.id as InvestorTier)}
                                     <span className="font-semibold">
-                                      {category.label}
+                                      {category.name}
                                     </span>
                                   </div>
                                   {isCurrent && (
@@ -206,7 +206,7 @@ export function UpgradeTierModal({
                                     <span className="font-medium break-all">
                                       {category.maxAmount === 50000000
                                         ? "₦10M+"
-                                        : `₦${category.maxAmount.toLocaleString()}`}
+                                        : `₦${category?.maxAmount!.toLocaleString()}`}
                                     </span>
                                   </div>
                                 </div>
