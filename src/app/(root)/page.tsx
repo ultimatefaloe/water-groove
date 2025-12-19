@@ -3,7 +3,8 @@ import { Metadata } from 'next';
 import HomeClient from '@/app/(root)/_components/HomeClient';
 
 export const metadata: Metadata = {
-  title: "Home | WG",
+    title: "Home | Water Groove",
+    description: "Welcome to Water Groove Investment Platform"
 }
 
 const HomePage = () => {
