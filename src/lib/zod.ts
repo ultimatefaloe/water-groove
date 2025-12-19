@@ -1,4 +1,4 @@
-import { InvestmentCategory } from '@/types/invesment'
+import { InvestorTier } from '@prisma/client'
 import { z } from 'zod'
 
 // Step 1: Deposit Form Schema
@@ -38,7 +38,7 @@ export const withdrawalFormSchema = z.object({
 })
 
 export const upgradeFormSchema = z.object({
-  investmentCategory: z.nativeEnum(InvestmentCategory, {
+  investorTier: z.nativeEnum(InvestorTier, {
     error: "Please select an investment category",
   }),
 })
@@ -48,3 +48,8 @@ export type DepositFormValues = z.infer<typeof depositFormSchema>
 export type ProofUploadFormValues = z.infer<typeof proofUploadSchema>
 export type WithdrawalFormValues = z.infer<typeof withdrawalFormSchema>
 export type UpgradeFormValues = z.infer<typeof upgradeFormSchema>
+
+export const createInvestmentSchema = z.object({
+  categoryId: z.string().uuid(),
+  principalAmount: z.number().positive(),
+})
