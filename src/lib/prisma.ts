@@ -10,8 +10,6 @@ const adapter = new PrismaPg({
 export const prisma = new PrismaClient({ adapter });
 export default prisma;
 
-
-
 export async function checkDbConnection(): Promise<void> {
   try {
     await prisma.$queryRaw`SELECT 1`;

@@ -1,5 +1,5 @@
 
-import { InvestorTier, TransactionStatus, TransactionType, AdminRole } from "@prisma/client"
+import { InvestorTier, TransactionStatus, TransactionType, AdminRole, InvestmentStatus } from "@prisma/client"
 
 export enum InvestmentStatusDto {
   PENDING_PAYMENT = "PENDING_PAYMENT",
@@ -34,9 +34,10 @@ export interface UserDto {
   fullName: string
   email: string
   phone?: string
-  investorTier?: InvestorTier
+  investorCategoryId?: string
   isActive: boolean
   createdAt: string
+  investorCategory: InvestmentCategoryDto | null
 }
 
 export interface AdminDto {
@@ -75,7 +76,7 @@ export interface InvestmentDto{
   roiRateSnapshot: number
   durationMonths: number
 
-  status: InvestmentStatusDto
+  status: InvestmentStatus
   startDate?: string
   endDate?: string
 

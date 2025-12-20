@@ -138,12 +138,12 @@ const Navbar = () => {
               </div>
             ) : (
               <>
-                <Link href="/login">
+                <Link href="/auth/login">
                   <Button variant="ghost" className="text-wg-primary hover:text-wg-primary hover:bg-wg-secondary/50">
                     Login
                   </Button>
                 </Link>
-                <Link href="/register">
+                <Link href="/auth/login">
                   <Button className="bg-wg-primary hover:bg-wg-primary/90 text-wg-secondary">
                     Get Started
                   </Button>
@@ -258,12 +258,12 @@ const Navbar = () => {
                         </>
                       ) : (
                         <>
-                          <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
                             <Button variant="outline" className="w-full text-wg-primary border-sidebar-border hover:bg-wg-secondary/50">
                               Login
                             </Button>
                           </Link>
-                          <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
                             <Button className="w-full bg-wg-primary hover:bg-wg-primary/90 text-wg-secondary">
                               Get Started
                             </Button>

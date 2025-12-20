@@ -32,6 +32,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   INVESTMENT_CATEGORIES,
   BankDetails,
+  InvestmentCategoryDto,
 } from "@/types/type";
 import {
   depositFormSchema,
@@ -43,9 +44,10 @@ import {
 interface DepositModalProps {
   isOpen: boolean;
   onClose: () => void;
+  investmentCategories: InvestmentCategoryDto[]
 }
 
-export function DepositModal({ isOpen, onClose }: DepositModalProps) {
+export function DepositModal({ isOpen, onClose, investmentCategories }: DepositModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [bankDetails, setBankDetails] = useState<BankDetails | null>(null);
@@ -66,13 +68,6 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   const proofForm = useForm<ProofUploadFormValues>({
     resolver: zodResolver(proofUploadSchema as any),
   });
-
-  // Mock investment categories (in real app, fetch from backend)
-  const mockInvestments = [
-    { id: "inv_1", name: "Tech Growth Fund", category: "STARTER" },
-    { id: "inv_2", name: "Real Estate Trust", category: "GROWTH" },
-    { id: "inv_3", name: "Crypto Index", category: "PREMIUM" },
-  ];
 
   const steps = [
     { id: 1, label: "Fill Form", description: "Enter deposit details" },
@@ -115,7 +110,7 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   const handleCopyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
+    setTimeout(() => setCopiedField(null), 2000); 
   };
 
   const resetModal = () => {
@@ -181,16 +176,12 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {mockInvestments.map((investment) => (
+                        {investmentCategories.map((investment) => (
                           <SelectItem key={investment.id} value={investment.id}>
-                            <div className="flex flex-col">
+                            <div className="flex gap-2 items-center">
                               <span>{investment.name}</span>
                               <span className="text-xs text-muted-foreground">
-                                {
-                                  INVESTMENT_CATEGORIES.find(
-                                    (cat) => cat.id === investment.category
-                                  )?.name
-                                }
+                                {investment.description}
                               </span>
                             </div>
                           </SelectItem>

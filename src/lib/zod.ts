@@ -38,7 +38,7 @@ export const withdrawalFormSchema = z.object({
 })
 
 export const upgradeFormSchema = z.object({
-  investorTier: z.nativeEnum(InvestorTier, {
+  investorCategoryId: z.string({
     error: "Please select an investment category",
   }),
 })
