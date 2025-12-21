@@ -106,7 +106,7 @@ const HomeClient = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative pt-24 pb-20 overflow-hidden bg-gradient-to-b from-sidebar to-wg-primary/10">
+      <section className="pt-24 pb-20 overflow-hidden bg-gradient-to-b from-sidebar to-wg-primary/10">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             {/* Trust badge */}
@@ -127,7 +127,7 @@ const HomeClient = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register">
+              <Link href="/auth/login">
                 <Button size="lg" className="bg-wg-primary hover:bg-wg-primary/90 text-white px-8 py-6 text-base rounded-lg">
                   Begin Investing <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>

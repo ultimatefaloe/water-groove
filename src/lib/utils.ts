@@ -1,3 +1,4 @@
+import { TransactionStatus } from "@prisma/client";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -15,9 +16,23 @@ export const formatDate = (dateString?: string) => {
 };
 
 export const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    minimumFractionDigits: 2,
+  }).format(amount);
+};
+
+export const getStatusColor = (status: TransactionStatus) => {
+  switch (status) {
+    case TransactionStatus.APPROVED:
+    case TransactionStatus.PAID:
+      return "bg-green-100 text-green-800";
+    case TransactionStatus.PENDING:
+      return "bg-amber-100 text-amber-800";
+    case TransactionStatus.REJECTED:
+      return "bg-red-100 text-red-800";
+    default:
+      return "";
+  }
+};

@@ -1,32 +1,81 @@
-import { PrismaClient, Prisma } from "@prisma/client";
-import { PrismaPg } from '@prisma/adapter-pg'
-import 'dotenv/config'
+import prisma from "@/lib/prisma";
+import "dotenv/config";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-})
+async function main() {
+  // await prisma.investmentCategory.createMany({
+  //   data: [
+  //     {
+  //       name: "STARTER",
+  //       minAmount: 100000,
+  //       maxAmount: 499000,
+  //       monthlyRoiRate: 0.04,
+  //       durationMonths: 18,
+  //       description: "₦100k – ₦499k",
+  //       isActive: true,
+  //     },
+  //     {
+  //       name: "GROWTH",
+  //       minAmount: 500000,
+  //       maxAmount: 1000000,
+  //       monthlyRoiRate: 0.05,
+  //       durationMonths: 18,
+  //       description: "₦500k – ₦1M",
+  //       isActive: true,
+  //     },
+  //     {
+  //       name: "PREMIUM",
+  //       minAmount: 1000000,
+  //       maxAmount: 5000000,
+  //       monthlyRoiRate: 0.06,
+  //       durationMonths: 18,
+  //       description: "₦1M – ₦5M",
+  //       isActive: true,
+  //     },
+  //     {
+  //       name: "ELITE",
+  //       minAmount: 5000000,
+  //       maxAmount: 10000000,
+  //       monthlyRoiRate: 0.07,
+  //       durationMonths: 18,
+  //       description: "₦5M – ₦10M",
+  //       isActive: true,
+  //     },
+  //     {
+  //       name: "EXECUTIVE",
+  //       minAmount: 10000000,
+  //       maxAmount: 50000000,
+  //       monthlyRoiRate: 0.08,
+  //       durationMonths: 18,
+  //       description: "₦10M+",
+  //       isActive: true,
+  //     },
+  //   ],
+  //   skipDuplicates: true,
+  // });
 
-const prisma = new PrismaClient({
-  adapter,
-});
 
-const userData: Prisma.UserCreateInput[] = [
-  {
-    auth0Id: "google-com|2342532452624645243",
-    fullName: "Alice",
-    email: "alice@prisma.io",
-  },
-  {
-    auth0Id: "google-com|234253243352624645243",
-    fullName: "Bob",
-    email: "bob@prisma.io",
-  }
-];
+  // await prisma.admin.create({
+  //   data:{
+  //     fullName: "Ultimate Faloe",
+  //     email: "ultimatefaloe@gmail.com",
+  //     passwordHash: "y812^@YF^V&GYGgyy662t737fgy^TT@^fdf666"
+  //   }
+  // })
 
-export async function main() {
-  for (const u of userData) {
-    await prisma.user.create({ data: u });
-  }
+  await prisma.platformBankAccount.create({
+    data: {
+      bankName: "Zenith Bank",
+      accountNumber: "1012345678",
+      accountHolderName: "WATER GROOVE INVESTMENT TECHNOLOGIES LTD",
+      isActive: true,
+      isDefault: true,
+      // createdByAdminId: 'ce8144c0-19ec-497d-8445-13098e62bbc6'
+    }
+  })
 }
 
-main();
+main()
+  .catch(console.error)
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

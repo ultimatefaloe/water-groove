@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { DashboardSkeleton } from "./_components/dashboard/DashboardSkeleton";
 import DashboardClient from "./_components/dashboard/DashboardClient";
 import { Metadata } from "next";
-import { getDashboardOverview } from "@/services/client.service";
+import { getAllInvestmentCategory, getDashboardOverview } from "@/services/client/r.service";
 import { getServerUser } from "@/lib/server/auth0-server";
 import { DashboardOverviewData } from "@/types/type";
 
@@ -35,13 +35,18 @@ export default async function DashboardPage() {
     
     // Fetch dashboard data
     const dashboardData = await getDashboardOverview(auth0User.id);
+    const investmemtCategoeies = await getAllInvestmentCategory()
     
     // Format and validate data
     const formattedData = formatDashboardData(dashboardData, auth0User);
 
+    console.log({
+      formattedData,
+    })
+
     return (
       <Suspense fallback={<DashboardSkeleton />}>
-        <DashboardClient data={formattedData} />
+        <DashboardClient data={formattedData} categories={investmemtCategoeies?.data} />
       </Suspense>
     );
   } catch (error) {
