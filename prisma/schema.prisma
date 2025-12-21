@@ -58,9 +58,8 @@ model User {
   phone    String? @unique
   picture  String?
 
-  investorCategoryId String?
-  investorCategory   InvestmentCategory? @relation(fields: [investorCategoryId], references: [id])
-  isActive           Boolean             @default(true)
+  investorTier InvestorTier?
+  isActive     Boolean       @default(true)
 
   investments  Investment[]
   transactions Transaction[]
@@ -79,13 +78,13 @@ model Admin {
   role         AdminRole @default(ADMIN)
   isActive     Boolean   @default(true)
 
+  lastLoginAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  lastLoginAt DateTime?
 
-  processedTxns Transaction[]        @relation("AdminTransactions")
-  approvedInv   Investment[]         @relation("AdminInvestments")
-  // createdCats   InvestmentCategory[]
+  approvedInvestments   Investment[]
+  processedTransactions Transaction[]
+  platformBankAccount   PlatformBankAccount[]
 
   @@index([email])
   @@index([role])
@@ -93,7 +92,7 @@ model Admin {
 
 model InvestmentCategory {
   id   String @id @default(uuid())
-  name String @unique
+  name InvestorTier @unique
 
   minAmount Decimal  @db.Decimal(15, 2)
   maxAmount Decimal? @db.Decimal(15, 2)
@@ -104,15 +103,10 @@ model InvestmentCategory {
   description String?
   isActive    Boolean @default(true)
 
-  // createdByAdminId String
-  // createdByAdmin   Admin  @relation(fields: [createdByAdminId], references: [id])
-
   investments Investment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user User[]
 
   @@index([isActive])
 }
@@ -137,7 +131,7 @@ model Investment {
   endDate   DateTime?
 
   approvedByAdminId String?
-  approvedByAdmin   Admin?  @relation("AdminInvestments", fields: [approvedByAdminId], references: [id])
+  approvedByAdmin   Admin?  @relation(fields: [approvedByAdminId], references: [id])
 
   transactions Transaction[]
 
@@ -147,7 +141,6 @@ model Investment {
   @@index([userId])
   @@index([categoryId])
   @@index([status])
-  @@index([startDate])
 }
 
 model Transaction {
@@ -167,16 +160,52 @@ model Transaction {
   description String?
 
   processedByAdminId String?
-  processedByAdmin   Admin?  @relation("AdminTransactions", fields: [processedByAdminId], references: [id])
+  processedByAdmin   Admin?  @relation(fields: [processedByAdminId], references: [id])
 
   processedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  withdrawalDetail WithdrawalDetail?
+
   @@index([userId])
+  @@index([investmentId])
   @@index([type])
   @@index([status])
-  @@index([investmentId])
-  @@index([processedByAdminId])
-  @@index([createdAt])
+}
+
+model WithdrawalDetail {
+  id String @id @default(uuid())
+
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  bankName          String
+  accountNumber     String
+  accountHolderName String
+  reference         String?
+
+  createdAt DateTime @default(now())
+}
+
+model PlatformBankAccount {
+  id String @id @default(uuid())
+
+  bankName          String
+  accountNumber     String
+  accountHolderName String
+
+  currency String @default("NGN")
+
+  isActive Boolean @default(false)
+  isDefault Boolean @default(false)
+
+  createdByAdminId String?
+  createdByAdmin   Admin? @relation(fields: [createdByAdminId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([isDefault])
 }

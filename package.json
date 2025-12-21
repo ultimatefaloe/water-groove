@@ -33,6 +33,7 @@
     "badge": "^1.0.3",
     "button": "^1.1.1",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.8.0",
     "clsx": "^2.1.1",
     "dropdown-menu": "^0.1.1",
     "lucide-react": "^0.561.0",
@@ -42,7 +43,8 @@
     "react-hook-form": "^7.68.0",
     "sheet": "^0.2.0",
     "tailwind-merge": "^3.4.0",
-    "zod": "^4.2.0"
+    "zod": "^4.2.0",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@prisma/adapter-pg": "^7.1.0",

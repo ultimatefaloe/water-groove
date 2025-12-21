@@ -1,21 +1,36 @@
-import { ApiResponse } from '../../types/type';
+import { ApiResponse, BankDetails } from '../../types/type';
 import { db } from "@/lib/db"
-import { UserDto, DashboardOverviewData, InvestmentWithCategoryDto, TransactionDto, InvestmentCategoryDto } from "@/types/type"
-import { mapInvestmentCategoryToDto, mapInvestmentToDto, mapInvestmentWithCategoryToDto, mapTransactionToDto, mapUserToDto } from '@/utils/mapper';
-import { Transaction, User, TransactionStatus, TransactionType } from "@prisma/client"
+import { DashboardOverviewData, InvestmentCategoryDto } from "@/types/type"
+import { mapBankDetailsToDto, mapInvestmentCategoryToDto, mapInvestmentWithCategoryToDto, mapTransactionToDto, mapUserToDto } from '@/utils/mapper';
+import { PlatformBankAccount, TransactionStatus, TransactionType } from "@prisma/client"
 
 export async function getDashboardOverview(
   userId: string
 ): Promise<DashboardOverviewData> {
 
-  const [user, investments, transactions] = await Promise.all([
-    db.user.findUniqueOrThrow({ where: { id: userId }, include: { investorCategory: true } }),
+  const [
+    user,
+    investments,
+    transactions,
+    pendingWithdrawalsTotal,
+    pendingDepositsTotal
+  ] = await Promise.all([
+    db.user.findUniqueOrThrow({ where: { id: userId } }),
     db.investment.findMany({
       where: { userId, status: "ACTIVE" },
       include: { category: true },
     }),
     db.transaction.findMany({ where: { userId } }),
-  ])
+    db.transaction.aggregate({
+      where: { userId, type: TransactionType.WITHDRAWAL, status: TransactionStatus.PENDING },
+      _sum: { amount: true } // assuming your transactions have an `amount` field
+    }),
+    db.transaction.aggregate({
+      where: { userId, type: TransactionType.DEPOSIT, status: TransactionStatus.PENDING },
+      _sum: { amount: true } // same here
+    }),
+  ]);
+
 
   const wallet = transactions.reduce(
     (acc, tx) => {
@@ -40,7 +55,8 @@ export async function getDashboardOverview(
         wallet.totalDeposits +
         wallet.totalInterest -
         wallet.totalWithdrawals,
-      pendingWithdrawals: 0,
+      pendingWithdrawals: Number(pendingWithdrawalsTotal?._sum?.amount),
+      pendingDeposits: Number(pendingDepositsTotal?._sum?.amount),
     },
     activeInvestments: investments.map(inv =>
       mapInvestmentWithCategoryToDto(
@@ -89,4 +105,22 @@ export async function getInvestmentCategory(
   }
 }
 
+export async function getPlatformBankDetails(): Promise<BankDetails | null> {
+  const details = await db.platformBankAccount.findFirst({
+    where: {
+      isActive: true,
+      isDefault: true,
+    },
+  })
 
+  if (!details) {
+    return null
+  }
+
+  return {
+    bankName: details.bankName,
+    accountHolderName: details.accountHolderName,
+    accountNumber: details.accountNumber,
+    reference: `REF-WG-${Date.now()}`,
+  }
+}

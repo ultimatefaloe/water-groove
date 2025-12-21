@@ -1,6 +1,6 @@
-import { Admin, Investment, InvestmentCategory, Transaction, User } from "@prisma/client"
+import { Admin, Investment, InvestmentCategory, PlatformBankAccount, Transaction, User } from "@prisma/client"
 import { Prisma } from "@prisma/client"
-import { AdminDto, InvestmentCategoryDto, InvestmentDto, InvestmentWithCategoryDto, TransactionDto, UserDto } from "@/types/type"
+import { AdminDto, BankDetails, InvestmentCategoryDto, InvestmentDto, InvestmentWithCategoryDto, TransactionDto, UserDto } from "@/types/type"
 
 export const decimalToNumber = (
   value?: Prisma.Decimal | null
@@ -13,15 +13,14 @@ export const dateToISOString = (
   value ? value.toISOString() : undefined
 
 
-export const mapUserToDto = (user: any): UserDto => ({
+export const mapUserToDto = (user: User): UserDto => ({
   id: user.id,
   fullName: user.fullName,
   email: user.email,
   phone: user.phone ?? undefined,
-  investorCategoryId: user.investorCategoryId ?? undefined,
   isActive: user.isActive,
   createdAt: dateToISOString(user.createdAt)!,
-  investorCategory: user.investorCategoryId ?  mapInvestmentCategoryToDto(user?.investorCategory!) : null
+  investorTier: user.investorTier! ?? undefined
 })
 
 export const mapAdminToDto = (admin: Admin): AdminDto => ({
@@ -90,4 +89,12 @@ export const mapTransactionToDto = (
 
   processedAt: dateToISOString(tx.processedAt),
   createdAt: dateToISOString(tx.createdAt)!,
+})
+
+export const mapBankDetailsToDto = (
+  bankDetails: PlatformBankAccount
+): BankDetails => ({
+  bankName: bankDetails.bankName,
+  accountNumber: bankDetails.accountNumber,
+  accountHolderName: bankDetails.accountHolderName,
 })

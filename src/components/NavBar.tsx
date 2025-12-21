@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { publicNavItems } from "@/navigations";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
@@ -77,8 +75,8 @@ const Navbar = () => {
                 <Image 
                   src="/logo_t.png" 
                   alt="Water Grove Logo" 
-                  width={32} 
-                  height={32} 
+                  width={100} 
+                  height={100} 
                   className="h-20 w-20"
                 />
               </div>

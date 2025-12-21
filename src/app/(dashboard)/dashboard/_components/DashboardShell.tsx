@@ -23,7 +23,7 @@ export default function DashboardShell({ children }: Props) {
   return (
     <div className="flex min-h-screen bg-white">
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden md:flex w-64">
+      <aside className="hidden md:flex w-64 lg:w-72">
         <DashboardSidebar pathname={pathname} onNavigate={() => {}} />
       </aside>
 

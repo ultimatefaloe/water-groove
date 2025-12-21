@@ -19,3 +19,14 @@ export async function getServerUser(): Promise<any> {
   const user = await createUserFromAuth0(session.user);
   return user;
 }
+
+export async function getServerUserId(): Promise<any> {
+  const session = await auth0.getSession();
+  
+  if (!session || !session.user) {
+    redirect('/auth/login');
+  }
+
+  const user = await createUserFromAuth0(session.user);
+  return user?.id;
+}

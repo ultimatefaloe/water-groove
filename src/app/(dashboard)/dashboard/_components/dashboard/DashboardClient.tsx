@@ -89,9 +89,9 @@ export default function DashboardClient({ data, categories }: DashboardClientPro
           {/* Balance Card */}
           <Card>
             <CardHeader className="pb-3">
-              { user?.investorCategory && <div className="flex flex-wrap items-center justify-between gap-2">
+              { user?.investorTier && <div className="flex flex-wrap items-center justify-between gap-2">
                 <CardTitle className="text-base sm:text-lg">
-                  {formatTier(user?.investorCategory.name)} Investor
+                  {formatTier(user?.investorTier)} Investor
                 </CardTitle>
                 <Badge variant="outline" className="gap-1">
                   <Shield className="h-3 w-3" />
@@ -163,11 +163,12 @@ export default function DashboardClient({ data, categories }: DashboardClientPro
                 </Button>
 
                 <Button
-                  className="h-20 sm:h-24 flex flex-col gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700"
-                  onClick={() => setShowUpgradeTierModal(true)}
+                  className="h-20 sm:h-24 flex flex-col gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 cursor-not-allowed"
+                  onClick={() => setShowUpgradeTierModal(false)}
                 >
                   <Zap className="h-5 w-5" />
                   <span className="text-sm font-semibold">Upgrade Tier</span>
+                  <span className="text-xs">Coming soon...</span>
                 </Button>
               </div>
             </CardContent>
@@ -194,16 +195,18 @@ export default function DashboardClient({ data, categories }: DashboardClientPro
                   {formatCurrency(wallet.totalDeposits)}
                 </span>
               </div>
+               <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">
+                  Pending Deposits
+                </span>
+                <span className="font-medium text-amber-600">
+                  {formatCurrency(wallet.pendingDeposits)}
+                </span>
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Total Withdrawals</span>
                 <span className="font-medium text-red-600">
                   -{formatCurrency(wallet.totalWithdrawals)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Total Interest</span>
-                <span className="font-medium text-green-600">
-                  +{formatCurrency(wallet.totalInterest)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -212,6 +215,12 @@ export default function DashboardClient({ data, categories }: DashboardClientPro
                 </span>
                 <span className="font-medium text-amber-600">
                   {formatCurrency(wallet.pendingWithdrawals)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Total Interest</span>
+                <span className="font-medium text-green-600">
+                  +{formatCurrency(wallet.totalInterest)}
                 </span>
               </div>
             </div>
@@ -274,11 +283,11 @@ export default function DashboardClient({ data, categories }: DashboardClientPro
         availableBalance={wallet.currentBalance}
       />
 
-     {user?.investorCategory && <UpgradeTierModal
+     {user?.investorTier && <UpgradeTierModal
         isOpen={showUpgradeTierModal}
         onClose={() => setShowUpgradeTierModal(false)}
         investmentCategories={categories}
-        currentTier={user?.investorCategory?.name}
+        currentTier={user?.investorTier}
       />}
     </div>
   );

@@ -32,7 +32,6 @@ export default async function DashboardPage() {
   try {
     // Get Auth0 user on server side
     const auth0User = await getServerUser();
-    console.log(auth0User)
     
     // Fetch dashboard data
     const dashboardData = await getDashboardOverview(auth0User.id);
@@ -40,6 +39,10 @@ export default async function DashboardPage() {
     
     // Format and validate data
     const formattedData = formatDashboardData(dashboardData, auth0User);
+
+    console.log({
+      formattedData,
+    })
 
     return (
       <Suspense fallback={<DashboardSkeleton />}>
