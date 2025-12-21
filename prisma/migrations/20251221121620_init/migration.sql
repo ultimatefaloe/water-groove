@@ -16,10 +16,11 @@ CREATE TYPE "TransactionStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'PAI
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
+    "auth0Id" TEXT NOT NULL,
     "fullName" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "phone" TEXT,
-    "passwordHash" TEXT NOT NULL,
+    "picture" TEXT,
     "investorTier" "InvestorTier",
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -36,9 +37,9 @@ CREATE TABLE "Admin" (
     "passwordHash" TEXT NOT NULL,
     "role" "AdminRole" NOT NULL DEFAULT 'ADMIN',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "lastLoginAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "lastLoginAt" TIMESTAMP(3),
 
     CONSTRAINT "Admin_pkey" PRIMARY KEY ("id")
 );
@@ -53,7 +54,6 @@ CREATE TABLE "InvestmentCategory" (
     "durationMonths" INTEGER NOT NULL,
     "description" TEXT,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "createdByAdminId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -96,6 +96,22 @@ CREATE TABLE "Transaction" (
     CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "WithdrawalDetail" (
+    "id" TEXT NOT NULL,
+    "transactionId" TEXT NOT NULL,
+    "bankName" TEXT NOT NULL,
+    "accountNumber" TEXT NOT NULL,
+    "accountHolderName" TEXT NOT NULL,
+    "reference" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "WithdrawalDetail_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_auth0Id_key" ON "User"("auth0Id");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -104,9 +120,6 @@ CREATE UNIQUE INDEX "User_phone_key" ON "User"("phone");
 
 -- CreateIndex
 CREATE INDEX "User_email_idx" ON "User"("email");
-
--- CreateIndex
-CREATE INDEX "User_investorTier_idx" ON "User"("investorTier");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Admin_email_key" ON "Admin"("email");
@@ -133,10 +146,10 @@ CREATE INDEX "Investment_categoryId_idx" ON "Investment"("categoryId");
 CREATE INDEX "Investment_status_idx" ON "Investment"("status");
 
 -- CreateIndex
-CREATE INDEX "Investment_startDate_idx" ON "Investment"("startDate");
+CREATE INDEX "Transaction_userId_idx" ON "Transaction"("userId");
 
 -- CreateIndex
-CREATE INDEX "Transaction_userId_idx" ON "Transaction"("userId");
+CREATE INDEX "Transaction_investmentId_idx" ON "Transaction"("investmentId");
 
 -- CreateIndex
 CREATE INDEX "Transaction_type_idx" ON "Transaction"("type");
@@ -145,16 +158,7 @@ CREATE INDEX "Transaction_type_idx" ON "Transaction"("type");
 CREATE INDEX "Transaction_status_idx" ON "Transaction"("status");
 
 -- CreateIndex
-CREATE INDEX "Transaction_investmentId_idx" ON "Transaction"("investmentId");
-
--- CreateIndex
-CREATE INDEX "Transaction_processedByAdminId_idx" ON "Transaction"("processedByAdminId");
-
--- CreateIndex
-CREATE INDEX "Transaction_createdAt_idx" ON "Transaction"("createdAt");
-
--- AddForeignKey
-ALTER TABLE "InvestmentCategory" ADD CONSTRAINT "InvestmentCategory_createdByAdminId_fkey" FOREIGN KEY ("createdByAdminId") REFERENCES "Admin"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+CREATE UNIQUE INDEX "WithdrawalDetail_transactionId_key" ON "WithdrawalDetail"("transactionId");
 
 -- AddForeignKey
 ALTER TABLE "Investment" ADD CONSTRAINT "Investment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -173,3 +177,6 @@ ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_investmentId_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_processedByAdminId_fkey" FOREIGN KEY ("processedByAdminId") REFERENCES "Admin"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "WithdrawalDetail" ADD CONSTRAINT "WithdrawalDetail_transactionId_fkey" FOREIGN KEY ("transactionId") REFERENCES "Transaction"("id") ON DELETE CASCADE ON UPDATE CASCADE;

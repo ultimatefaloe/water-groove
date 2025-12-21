@@ -2,14 +2,10 @@
 
 import { useState, useMemo } from "react";
 import {
-  TrendingUp,
   Download,
   Upload,
   Zap,
   Shield,
-  CheckCircle,
-  Clock,
-  XCircle,
   Eye,
   EyeOff,
   Calendar,
@@ -26,65 +22,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { DepositModal } from "../modals/deposit-modal";
 import { WithdrawalModal } from "../modals/withdrawal-modal";
 import { UpgradeTierModal } from "../modals/upgrade-tier-modal";
-import { DashboardOverviewData } from "@/types/type";
+import { DashboardOverviewData, InvestmentCategoryDto } from "@/types/type";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { OverviewItem } from "@/components/ui/overview-Item";
 import {
-  TransactionStatus,
-  TransactionType,
   InvestorTier,
 } from "@prisma/client";
+import { ActiveInvestmentsTable } from "./ActiveInvestmentsTable";
+import { PendingTransactionsTable } from "./PendingTransactionsTable";
 
 interface DashboardClientProps {
   data: DashboardOverviewData;
+  categories: InvestmentCategoryDto[]
 }
 
-// Memoized helper functions
-const getStatusIcon = (status: TransactionStatus) => {
-  switch (status) {
-    case TransactionStatus.APPROVED:
-    case TransactionStatus.PAID:
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
-    case TransactionStatus.PENDING:
-      return <Clock className="h-4 w-4 text-amber-500" />;
-    case TransactionStatus.REJECTED:
-      return <XCircle className="h-4 w-4 text-red-500" />;
-    default:
-      return null;
-  }
-};
-
-const getStatusColor = (status: TransactionStatus) => {
-  switch (status) {
-    case TransactionStatus.APPROVED:
-    case TransactionStatus.PAID:
-      return "bg-green-100 text-green-800";
-    case TransactionStatus.PENDING:
-      return "bg-amber-100 text-amber-800";
-    case TransactionStatus.REJECTED:
-      return "bg-red-100 text-red-800";
-    default:
-      return "";
-  }
-};
-
-const formatTier = (tier?: InvestorTier) => {
+const formatTier = (tier?: string) => {
   if (!tier) return "Not Set";
   return tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase();
 };
 
-export default function DashboardClient({ data }: DashboardClientProps) {
+export default function DashboardClient({ data, categories }: DashboardClientProps) {
   const [viewBalance, setViewBalance] = useState<boolean>(false);
   const [showDepositModal, setShowDepositModal] = useState<boolean>(false);
   const [showWithdrawalModal, setShowWithdrawalModal] =
@@ -129,15 +89,15 @@ export default function DashboardClient({ data }: DashboardClientProps) {
           {/* Balance Card */}
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+              { user?.investorTier && <div className="flex flex-wrap items-center justify-between gap-2">
                 <CardTitle className="text-base sm:text-lg">
-                  {formatTier(user.investorTier)} Investor
+                  {formatTier(user?.investorTier)} Investor
                 </CardTitle>
                 <Badge variant="outline" className="gap-1">
                   <Shield className="h-3 w-3" />
                   {user.isActive ? "Active" : "Inactive"}
                 </Badge>
-              </div>
+              </div>}
               <CardDescription>{user.fullName}</CardDescription>
             </CardHeader>
 
@@ -203,11 +163,12 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                 </Button>
 
                 <Button
-                  className="h-20 sm:h-24 flex flex-col gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700"
-                  onClick={() => setShowUpgradeTierModal(true)}
+                  className="h-20 sm:h-24 flex flex-col gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 cursor-not-allowed"
+                  onClick={() => setShowUpgradeTierModal(false)}
                 >
                   <Zap className="h-5 w-5" />
                   <span className="text-sm font-semibold">Upgrade Tier</span>
+                  <span className="text-xs">Coming soon...</span>
                 </Button>
               </div>
             </CardContent>
@@ -234,16 +195,18 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                   {formatCurrency(wallet.totalDeposits)}
                 </span>
               </div>
+               <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">
+                  Pending Deposits
+                </span>
+                <span className="font-medium text-amber-600">
+                  {formatCurrency(wallet.pendingDeposits)}
+                </span>
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Total Withdrawals</span>
                 <span className="font-medium text-red-600">
                   -{formatCurrency(wallet.totalWithdrawals)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Total Interest</span>
-                <span className="font-medium text-green-600">
-                  +{formatCurrency(wallet.totalInterest)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -252,6 +215,12 @@ export default function DashboardClient({ data }: DashboardClientProps) {
                 </span>
                 <span className="font-medium text-amber-600">
                   {formatCurrency(wallet.pendingWithdrawals)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Total Interest</span>
+                <span className="font-medium text-green-600">
+                  +{formatCurrency(wallet.totalInterest)}
                 </span>
               </div>
             </div>
@@ -304,6 +273,7 @@ export default function DashboardClient({ data }: DashboardClientProps) {
       {/* Modals */}
       <DepositModal
         isOpen={showDepositModal}
+        investmentCategories={categories}
         onClose={() => setShowDepositModal(false)}
       />
 
@@ -313,154 +283,12 @@ export default function DashboardClient({ data }: DashboardClientProps) {
         availableBalance={wallet.currentBalance}
       />
 
-      <UpgradeTierModal
+     {user?.investorTier && <UpgradeTierModal
         isOpen={showUpgradeTierModal}
         onClose={() => setShowUpgradeTierModal(false)}
-        currentTier={user.investorTier}
-      />
+        investmentCategories={categories}
+        currentTier={user?.investorTier}
+      />}
     </div>
   );
 }
-
-// Extract tables into separate components for better performance
-const ActiveInvestmentsTable = ({
-  investments,
-}: {
-  investments: DashboardOverviewData["activeInvestments"];
-}) => (
-  <Card className="lg:col-span-3">
-    <CardHeader>
-      <CardTitle>Active Investments</CardTitle>
-      <CardDescription>Your current investment plans</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Investment Plan</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Monthly ROI</TableHead>
-            <TableHead>Duration</TableHead>
-            <TableHead>Interest Earned</TableHead>
-            <TableHead>Start Date</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {investments.map((investment) => (
-            <TableRow key={investment.id}>
-              <TableCell className="font-medium">
-                <div>
-                  <div>{investment.category.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {investment.category.description}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell className="font-medium">
-                {formatCurrency(investment.principalAmount)}
-              </TableCell>
-              <TableCell>
-                <span className="text-green-600 font-medium">
-                  {(investment.category.monthlyRoiRate * 100).toFixed(1)}%
-                </span>
-              </TableCell>
-              <TableCell>{investment.category.durationMonths} months</TableCell>
-              <TableCell className="text-green-600 font-medium">
-                +{formatCurrency(investment.totalInterestEarned)}
-              </TableCell>
-              <TableCell>{formatDate(investment.createdAt)}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </CardContent>
-  </Card>
-);
-
-const PendingTransactionsTable = ({
-  transactions,
-}: {
-  transactions: DashboardOverviewData["pendingTransactions"];
-}) => (
-  <Card className="lg:col-span-3">
-    <CardHeader className="flex flex-row items-center justify-between">
-      <div>
-        <CardTitle>Pending Transactions</CardTitle>
-        <CardDescription>Transactions awaiting approval</CardDescription>
-      </div>
-      <Button variant="outline" size="sm">
-        View All
-      </Button>
-    </CardHeader>
-    <CardContent>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Transaction ID</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transactions.map((transaction) => (
-            <TableRow key={transaction.id}>
-              <TableCell className="font-medium">
-                {transaction.id.slice(0, 8)}...
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant="outline"
-                  className={
-                    transaction.type === TransactionType.DEPOSIT
-                      ? "bg-blue-50 text-blue-700"
-                      : "bg-amber-50 text-amber-700"
-                  }
-                >
-                  {transaction.type}
-                </Badge>
-              </TableCell>
-              <TableCell className="font-medium">
-                {formatCurrency(transaction.amount)}
-              </TableCell>
-              <TableCell>{formatDate(transaction.createdAt)}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(transaction.status)}
-                  <Badge
-                    variant="secondary"
-                    className={getStatusColor(transaction.status)}
-                  >
-                    {transaction.status}
-                  </Badge>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </CardContent>
-    <CardFooter className="flex-col items-start gap-2">
-      <div className="flex items-center justify-between w-full">
-        <div className="text-sm text-muted-foreground">
-          Showing {transactions.length} pending transactions
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-green-500" />
-            <span className="text-xs">Approved</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-amber-500" />
-            <span className="text-xs">Pending</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-red-500" />
-            <span className="text-xs">Rejected</span>
-          </div>
-        </div>
-      </div>
-    </CardFooter>
-  </Card>
-);

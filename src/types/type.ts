@@ -1,5 +1,5 @@
 
-import { InvestorTier, TransactionStatus, TransactionType, AdminRole } from "@prisma/client"
+import { InvestorTier, TransactionStatus, TransactionType, AdminRole, InvestmentStatus } from "@prisma/client"
 
 export enum InvestmentStatusDto {
   PENDING_PAYMENT = "PENDING_PAYMENT",
@@ -34,9 +34,10 @@ export interface UserDto {
   fullName: string
   email: string
   phone?: string
-  investorTier?: InvestorTier
+  investorCategoryId?: string
   isActive: boolean
   createdAt: string
+  investorTier: InvestorTier
 }
 
 export interface AdminDto {
@@ -60,13 +61,13 @@ export interface InvestmentCategoryDto {
   createdAt: string
 }
 
-export interface InvestmentWithCategoryDto extends InvestmentDto{
+export interface InvestmentWithCategoryDto extends InvestmentDto {
   category: InvestmentCategoryDto
   totalInterestEarned: number
 }
 
 
-export interface InvestmentDto{
+export interface InvestmentDto {
   id: string
   userId: string
   categoryId: string
@@ -75,7 +76,7 @@ export interface InvestmentDto{
   roiRateSnapshot: number
   durationMonths: number
 
-  status: InvestmentStatusDto
+  status: InvestmentStatus
   startDate?: string
   endDate?: string
 
@@ -104,6 +105,7 @@ export interface WalletSummaryDto {
   totalInterest: number
   currentBalance: number
   pendingWithdrawals: number
+  pendingDeposits: number
 }
 
 //Dashboard
@@ -180,65 +182,12 @@ export interface DashboardLayoutProps {
 export interface BankDetails {
   bankName: string
   accountNumber: string
-  accountName: string
-  reference: string
+  accountHolderName: string
+  reference?: string
 }
 
-
-export const INVESTMENT_CATEGORIES: InvestmentCategoryDto[] = [
-  {
-    id: InvestorTier.STARTER,
-    name: "Starter",
-    minAmount: 100000,
-    maxAmount: 499000,
-    monthlyRoiRate: 0.04, // 4% monthly
-    durationMonths: 6,
-    description: "₦100k – ₦499k",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: InvestorTier.GROWTH,
-    name: "Growth",
-    minAmount: 500000,
-    maxAmount: 1000000,
-    monthlyRoiRate: 0.05, // 5% monthly
-    durationMonths: 9,
-    description: "₦500k – ₦1M",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: InvestorTier.PREMIUM,
-    name: "Premium",
-    minAmount: 1000000,
-    maxAmount: 5000000,
-    monthlyRoiRate: 0.06, // 6% monthly
-    durationMonths: 12,
-    description: "₦1M – ₦5M",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: InvestorTier.ELITE,
-    name: "Elite",
-    minAmount: 5000000,
-    maxAmount: 10000000,
-    monthlyRoiRate: 0.07, // 7% monthly
-    durationMonths: 12,
-    description: "₦5M – ₦10M",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: InvestorTier.EXECUTIVE,
-    name: "Executive",
-    minAmount: 10000000,
-    maxAmount: 50000000,
-    monthlyRoiRate: 0.08, // 8% monthly
-    durationMonths: 18,
-    description: "₦10M+",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-];
+export interface CreateDeposit {
+  investmentCatId: string,
+  amount: number,
+  description: string,
+}
