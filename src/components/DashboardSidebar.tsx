@@ -3,15 +3,13 @@
 import Link from "next/link";
 import {
   ChevronRight,
-  DollarSign,
   Headset,
   HelpCircle,
   LogOut,
   Settings,
 } from "lucide-react";
-import { dashboardNavItems } from "@/navigations";
+import { dashboardNavItems } from "@/config/navigations";
 import clsx from "clsx";
-import { Separator } from "./ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
 import { NavLinks } from "@/types/nav";
@@ -61,9 +59,9 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
   };
 
   return (
-    <div className="flex h-screen flex-col fixed bg-sidebar">
+    <div className="flex h-screen flex-col fixed bg-wg-neutral border-r border-wg-accent">
       {/* Logo */}
-      <div className="px-6 py-5 border-sidebar-border border-b bg-sidebar">
+      <div className="px-6 py-5">
         <Link href="/dashboard" className="flex items-center gap-3">
           <Image src="/logo_t.png" alt="WG_logo" width={50} height={50} />
           <span className="text-lg font-bold text-wg-primary hover:text-wg-secondary">
@@ -73,7 +71,7 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
       </div>
 
       {/* Main Navigation */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-1 bg-sidebar">
+      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         {dashboardNavItems.map((item) => {
           const active = pathname === item.href;
           const Icon = item.icon;
@@ -99,8 +97,7 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
       </nav>
 
       {/* Secondary Section */}
-      <div className="overflow-y-auto px-3 py-4 bg-sidebar border-t border-sidebar-border">
-        <Separator className="my-4 bg-sidebar-border" />
+      <div className="overflow-y-auto px-3 py-4">
 
         {/* Secondary Navigation */}
         <nav className="space-y-1">
@@ -177,7 +174,7 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
             {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className="flex items-center justify-center rounded-lg p-2 text-sm text-wg-secondary/70 hover:bg-destructive/10 hover:text-destructive transition-colors"
+              className="flex items-center justify-center rounded-sm p-2 bg-wg-primary/10 text-sm text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
             >
               <LogOut className="h-4 w-4" />
             </button>
