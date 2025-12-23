@@ -17,10 +17,7 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               {/* Replace with actual logo */}
-              <div className="h-8 w-8 rounded bg-primary" />
-              <span className="text-lg font-semibold">
-                Water Groove Investment
-              </span>
+              <img src="/logo_t.png" alt="" />
             </div>
 
             <p className="text-sm text-muted-foreground">
