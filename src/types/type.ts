@@ -214,6 +214,111 @@ export interface CategoryDto {
   createdAt?: string
 }
 
+export interface TransactionFilter {
+  type?: TransactionType
+  status?: TransactionStatus
+  startDate?: string // ISO string format
+  endDate?: string // ISO string format
+  page?: number
+  limit?: number
+  search?: string // Optional search term for description/ID
+}
+
+export interface TransactionResponse {
+  transactions: TransactionDto[]
+  total: number // Total number of transactions matching filter (without pagination)
+  page: number // Current page number
+  limit: number // Number of items per page
+  totalPages: number // Total number of pages
+  hasNextPage: boolean // Whether there's a next page
+  hasPreviousPage: boolean // Whether there's a previous page
+}
+
+// Extended version with metadata (optional, for more detailed responses)
+export interface TransactionResponseWithMetadata extends TransactionResponse {
+  metadata?: {
+    totalDeposits?: number
+    totalWithdrawals?: number
+    totalInterest?: number
+    averageAmount?: number
+    period?: {
+      startDate: string
+      endDate: string
+    }
+  }
+}
+
+// Alternative simplified response for API that might return different structures
+export interface PaginatedTransactionResponse {
+  data: TransactionDto[]
+  pagination: {
+    currentPage: number
+    pageSize: number
+    totalItems: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+  }
+}
+
+// Query parameters interface for API requests
+export interface TransactionQueryParams {
+  type?: TransactionType
+  status?: TransactionStatus
+  from?: string
+  to?: string
+  page?: string
+  limit?: string
+  sortBy?: 'date' | 'amount' | 'type' // Optional sorting
+  sortOrder?: 'asc' | 'desc' // Optional sort order
+}
+
+// Filter state for UI components
+export interface TransactionFilterState {
+  type: TransactionType | 'ALL'
+  status: TransactionStatus | 'ALL'
+  dateRange: {
+    from?: Date
+    to?: Date
+  }
+  searchTerm: string
+}
+
+// Option types for UI dropdowns
+export interface TransactionFilterOptions {
+  typeOptions: Array<{
+    value: TransactionType | 'ALL'
+    label: string
+    count?: number
+  }>
+  statusOptions: Array<{
+    value: TransactionStatus | 'ALL'
+    label: string
+    count?: number
+  }>
+}
+
+// Summary statistics
+export interface TransactionSummary {
+  totalTransactions: number
+  totalAmount: number
+  deposits: {
+    count: number
+    total: number
+    pending: number
+  }
+  withdrawals: {
+    count: number
+    total: number
+    pending: number
+  }
+  interest: {
+    count: number
+    total: number
+  }
+  statusBreakdown: Record<TransactionStatus, number>
+}
+
 // `REF-WG-${Date.now()}`
 // const isLocked =
 //   now < investment.startDate + 18 months

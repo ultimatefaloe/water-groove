@@ -6,7 +6,7 @@ import { Menu, Bell } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { dashboardNavItems } from "@/navigations";
+import { dashboardNavItems } from "@/config/navigations";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 
 interface Props {

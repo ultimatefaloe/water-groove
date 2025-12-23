@@ -25,6 +25,11 @@
   --breakpoint-xl: 1280px;
   --breakpoint-2xl: 1440px;
 
+  /* wg-primary: #152333;
+  wg-primary2: #051629;
+  wg-secondary: #f5ce20;
+  wg-accent: #0575f5;
+  wg-neutral: #ffffff; */
   /* WG Custom Colors */
   --color-wg-primary: #152333; /* Deep Blue */
   --color-wg-primary2: #051629;

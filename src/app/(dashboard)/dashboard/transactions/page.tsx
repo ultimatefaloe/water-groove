@@ -1,13 +1,60 @@
-import { Metadata } from 'next'
+import { Metadata } from "next";
+import TransactionClient from "../_components/transaction/TransactionClient";
+import { TransactionQueryParams, TransactionResponse } from "@/types/type";
+import { getTransactions } from "@/services/client/r.service";
+import { getServerUserId } from "@/lib/server/auth0-server";
+import { TransactionStatus, TransactionType } from "@prisma/client";
 
+export const metadata: Metadata = {
+  title: "Transactions | WG",
+  description: "View and manage your transaction history",
+};
 
-export const metadata:Metadata = {
-  title: "Transactions | WG"
-}
-const Transactions = () => {
+const Transactions = async ({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) => {
+  // Build query params from search params
+  const queryParams: TransactionQueryParams = {
+    page: typeof searchParams.page === "string" ? searchParams.page : "1",
+    limit: typeof searchParams.limit === "string" ? searchParams.limit : "20",
+    type:
+      typeof searchParams.type === "string"
+        ? (searchParams.type as TransactionType)
+        : undefined,
+    status:
+      typeof searchParams.status === "string"
+        ? (searchParams.status as TransactionStatus)
+        : undefined,
+    from: typeof searchParams.from === "string" ? searchParams.from : undefined,
+    to: typeof searchParams.to === "string" ? searchParams.to : undefined,
+  };
+
+  const userId = await getServerUserId();
+  const res = await getTransactions(userId, queryParams);
+
+  const data = res?.data ?? {
+    transactions: [],
+    total: 0,
+    page: 1,
+    limit: 20,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  };
+
   return (
-    <div>Transactions</div>
-  )
-}
+    <div className="">
+      <TransactionClient
+        initialTransactions={data.transactions}
+        total={data.total}
+        page={data.page}
+        limit={data.limit}
+        totalPages={data.totalPages}
+      />
+    </div>
+  );
+};
 
-export default Transactions
+export default Transactions;

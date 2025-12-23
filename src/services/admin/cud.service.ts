@@ -44,7 +44,6 @@ export async function approveDeposit(txnId: string, adminId: string): Promise<Ap
   }
 }
 
-
 // Withdrawal
 export async function approveWithdrawal(txnId: string, adminId: string): Promise<ApiResponse<null>> {
   if (!adminId || !txnId) return {
