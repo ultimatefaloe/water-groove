@@ -19,7 +19,7 @@ export enum InvestmentStatusDto {
 export interface ApiResponse<T> {
   success: boolean
   message?: string
-  data: T
+  data?: T
 }
 
 export interface ApiError {
@@ -34,10 +34,9 @@ export interface UserDto {
   fullName: string
   email: string
   phone?: string
-  investorCategoryId?: string
   isActive: boolean
   createdAt: string
-  investorTier: InvestorTier
+  investmentCategoryId: string
 }
 
 export interface AdminDto {
@@ -62,7 +61,7 @@ export interface InvestmentCategoryDto {
 }
 
 export interface InvestmentWithCategoryDto extends InvestmentDto {
-  category: InvestmentCategoryDto
+  category: CategoryDto
   totalInterestEarned: number
 }
 
@@ -111,6 +110,7 @@ export interface WalletSummaryDto {
 //Dashboard
 export interface DashboardOverviewData {
   user: UserDto
+  category?: CategoryDto | null
   wallet: WalletSummaryDto
   activeInvestments: InvestmentWithCategoryDto[]
   pendingTransactions: TransactionDto[]
@@ -191,3 +191,31 @@ export interface CreateDeposit {
   amount: number,
   description: string,
 }
+
+export interface WithdrawalRequestDto {
+  bankName: string
+  accountNumber: string
+  accountHolderName: string
+  amount: number
+  reference?: string
+}
+
+export interface CategoryDto {
+  id?: string
+  code: string
+  name: string
+  priority: number
+  minAmount: number
+  maxAmount: number
+  monthlyRoiRate: number
+  durationMonths: number
+  description: string
+  isActive?: boolean
+  createdAt?: string
+}
+
+// `REF-WG-${Date.now()}`
+// const isLocked =
+//   now < investment.startDate + 18 months
+// penalty = principalAmount * 0.25
+// payout = requestedAmount - penalty

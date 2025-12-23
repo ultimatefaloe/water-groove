@@ -1,6 +1,6 @@
 import { Admin, Investment, InvestmentCategory, PlatformBankAccount, Transaction, User } from "@prisma/client"
 import { Prisma } from "@prisma/client"
-import { AdminDto, BankDetails, InvestmentCategoryDto, InvestmentDto, InvestmentWithCategoryDto, TransactionDto, UserDto } from "@/types/type"
+import { AdminDto, BankDetails, InvestmentCategoryDto, CategoryDto, InvestmentDto, InvestmentWithCategoryDto, TransactionDto, UserDto } from "@/types/type"
 
 export const decimalToNumber = (
   value?: Prisma.Decimal | null
@@ -20,7 +20,7 @@ export const mapUserToDto = (user: User): UserDto => ({
   phone: user.phone ?? undefined,
   isActive: user.isActive,
   createdAt: dateToISOString(user.createdAt)!,
-  investorTier: user.investorTier! ?? undefined
+  investmentCategoryId: user.investmentCategoryId! ?? undefined,
 })
 
 export const mapAdminToDto = (admin: Admin): AdminDto => ({
@@ -30,20 +30,6 @@ export const mapAdminToDto = (admin: Admin): AdminDto => ({
   role: admin.role,
   isActive: admin.isActive,
   lastLoginAt: dateToISOString(admin.lastLoginAt),
-})
-
-export const mapInvestmentCategoryToDto = (
-  category: InvestmentCategory
-): InvestmentCategoryDto => ({
-  id: category.id,
-  name: category.name,
-  minAmount: decimalToNumber(category.minAmount)!,
-  maxAmount: decimalToNumber(category.maxAmount),
-  monthlyRoiRate: decimalToNumber(category.monthlyRoiRate)!,
-  durationMonths: category.durationMonths,
-  description: category.description ?? undefined,
-  isActive: category.isActive,
-  createdAt: dateToISOString(category.createdAt)!,
 })
 
 export const mapInvestmentToDto = (
@@ -69,7 +55,7 @@ export const mapInvestmentWithCategoryToDto = (
   totalInterestEarned: number
 ): InvestmentWithCategoryDto => ({
   ...mapInvestmentToDto(investment),
-  category: mapInvestmentCategoryToDto(investment.category),
+  category: mapCategoryToDto(investment.category),
   totalInterestEarned,
 })
 
@@ -98,3 +84,22 @@ export const mapBankDetailsToDto = (
   accountNumber: bankDetails.accountNumber,
   accountHolderName: bankDetails.accountHolderName,
 })
+
+export function mapCategoryToDto(
+  category: InvestmentCategory
+): CategoryDto {
+  return {
+    id: category.id,
+    code: category.code,
+    name: category.name,
+    priority: category.priority,
+
+    minAmount: category.minAmount.toNumber(),
+    maxAmount: Number(category.maxAmount) ?? null,
+    monthlyRoiRate: category.monthlyRoiRate.toNumber(),
+
+    durationMonths: category.durationMonths,
+    description: String(category.description) ?? null,
+    isActive: category.isActive,
+  };
+}

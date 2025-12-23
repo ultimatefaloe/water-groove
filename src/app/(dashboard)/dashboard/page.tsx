@@ -4,7 +4,7 @@ import DashboardClient from "./_components/dashboard/DashboardClient";
 import { Metadata } from "next";
 import { getAllInvestmentCategory, getDashboardOverview } from "@/services/client/r.service";
 import { getServerUser } from "@/lib/server/auth0-server";
-import { DashboardOverviewData } from "@/types/type";
+import { ApiResponse, CategoryDto, DashboardOverviewData } from "@/types/type";
 
 export const metadata: Metadata = {
   title: "Dashboard | Water Groove",
@@ -21,6 +21,7 @@ function formatDashboardData(data: DashboardOverviewData, auth0User: any) {
       email: data.user.email || auth0User.email,
       fullName: data.user.fullName || auth0User.name || 'User',
     },
+    category: data.category,
     wallet: data.wallet,
     activeInvestments: data.activeInvestments,
     pendingTransactions: data.pendingTransactions,
@@ -35,18 +36,14 @@ export default async function DashboardPage() {
     
     // Fetch dashboard data
     const dashboardData = await getDashboardOverview(auth0User.id);
-    const investmemtCategoeies = await getAllInvestmentCategory()
+    const investmemtCategoeies= await getAllInvestmentCategory()
     
     // Format and validate data
     const formattedData = formatDashboardData(dashboardData, auth0User);
 
-    console.log({
-      formattedData,
-    })
-
     return (
       <Suspense fallback={<DashboardSkeleton />}>
-        <DashboardClient data={formattedData} categories={investmemtCategoeies?.data} />
+        <DashboardClient data={formattedData} categories={investmemtCategoeies.data ?? []} />
       </Suspense>
     );
   } catch (error) {

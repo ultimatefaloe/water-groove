@@ -52,14 +52,16 @@ enum TransactionStatus {
 
 model User {
   id       String  @id @default(uuid())
-  auth0Id  String  @unique
+  auth_Id  String  @unique
   fullName String
   email    String  @unique
   phone    String? @unique
   picture  String?
 
-  investorTier InvestorTier?
-  isActive     Boolean       @default(true)
+  investmentCategoryId String?
+  investmentCategory   InvestmentCategory? @relation(fields: [investmentCategoryId], references: [id])
+
+  isActive Boolean @default(true)
 
   investments  Investment[]
   transactions Transaction[]
@@ -82,33 +84,38 @@ model Admin {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  approvedInvestments   Investment[]
-  processedTransactions Transaction[]
-  platformBankAccount   PlatformBankAccount[]
+  approvedInvestments   Investment[]          @relation("ApprovedInvestments")
+  processedTransactions Transaction[]         @relation("ProcessedTransactions")
+  platformBankAccounts  PlatformBankAccount[]
 
   @@index([email])
   @@index([role])
 }
 
 model InvestmentCategory {
-  id   String @id @default(uuid())
-  name InvestorTier @unique
+  id String @id @default(uuid())
+
+  code     String @unique // STARTER, GROWTH, PREMIUM
+  name     String // Human readable
+  priority Int // ordering
 
   minAmount Decimal  @db.Decimal(15, 2)
   maxAmount Decimal? @db.Decimal(15, 2)
 
   monthlyRoiRate Decimal @db.Decimal(5, 2)
-  durationMonths Int
+  durationMonths Int // e.g. 18
 
   description String?
   isActive    Boolean @default(true)
 
   investments Investment[]
+  users       User[] // current tier users
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([isActive])
+  @@index([priority])
 }
 
 model Investment {
@@ -131,9 +138,10 @@ model Investment {
   endDate   DateTime?
 
   approvedByAdminId String?
-  approvedByAdmin   Admin?  @relation(fields: [approvedByAdminId], references: [id])
+  approvedByAdmin   Admin?  @relation("ApprovedInvestments", fields: [approvedByAdminId], references: [id])
 
-  transactions Transaction[]
+  investorBalance InvestorBalance?
+  transactions    Transaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -141,6 +149,25 @@ model Investment {
   @@index([userId])
   @@index([categoryId])
   @@index([status])
+}
+
+model InvestorBalance {
+  id String @id @default(uuid())
+
+  investmentId String     @unique
+  investment   Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+
+  principalLocked Decimal @db.Decimal(15, 2)
+  roiAccrued      Decimal @default(0) @db.Decimal(15, 2)
+  totalDeposited  Decimal @default(0) @db.Decimal(15, 2)
+  totalWithdrawn  Decimal @default(0) @db.Decimal(15, 2)
+
+  availableBalance Decimal @default(0) @db.Decimal(15, 2)
+
+  lastComputedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Transaction {
@@ -160,7 +187,7 @@ model Transaction {
   description String?
 
   processedByAdminId String?
-  processedByAdmin   Admin?  @relation(fields: [processedByAdminId], references: [id])
+  processedByAdmin   Admin?  @relation("ProcessedTransactions", fields: [processedByAdminId], references: [id])
 
   processedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -197,11 +224,11 @@ model PlatformBankAccount {
 
   currency String @default("NGN")
 
-  isActive Boolean @default(false)
+  isActive  Boolean @default(false)
   isDefault Boolean @default(false)
 
   createdByAdminId String?
-  createdByAdmin   Admin? @relation(fields: [createdByAdminId], references: [id])
+  createdByAdmin   Admin?  @relation(fields: [createdByAdminId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

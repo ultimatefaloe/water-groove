@@ -43,16 +43,13 @@ export const proofUploadSchema = z.object({
 
 
 export const withdrawalFormSchema = z.object({
-  bankHolderName: z.string().trim().min(1, "Bank holder name is required"),
   bankName: z.string().trim().min(1, "Bank name is required"),
-  bankAccountNumber: z
+  accountHolderName: z.string().trim().min(1, "Bank holder name is required"),
+  accountNumber: z
     .string()
     .regex(/^\d{10}$/, "Account number must be 10 digits"),
-  amount: z.preprocess(
-    (val) => Number(val),
-    z.number().min(1, "Amount must be greater than 0")
-  ),
-  narration: z.string().trim().min(1, "Narration is required").max(500, "Narration too long"),
+  amount: z.number().min(1, "Amount must be greater than 0"),
+  reference: z.string().optional(),
 });
 
 export const upgradeFormSchema = z.object({
@@ -73,3 +70,24 @@ export const createInvestmentSchema = z.object({
     z.number().positive("Principal amount must be greater than 0")
   ),
 });
+
+
+export const InvestmentCategorySchema = z.object({
+  code: z.string().min(2).max(20),
+  name: z.string().min(3),
+  priority: z.number().int().min(0),
+
+  minAmount: z.number().positive(),
+  maxAmount: z.number().positive(),
+
+  monthlyRoiRate: z.number().min(0),
+  durationMonths: z.number().int().positive(),
+
+  description: z.string().optional(),
+}).refine(
+  (data) => data.maxAmount >= data.minAmount,
+  {
+    message: "maxAmount must be greater than or equal to minAmount",
+    path: ["maxAmount"],
+  }
+);

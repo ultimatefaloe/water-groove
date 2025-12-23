@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { DepositModal } from "../modals/deposit-modal";
 import { WithdrawalModal } from "../modals/withdrawal-modal";
 import { UpgradeTierModal } from "../modals/upgrade-tier-modal";
-import { DashboardOverviewData, InvestmentCategoryDto } from "@/types/type";
+import { CategoryDto, DashboardOverviewData } from "@/types/type";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { OverviewItem } from "@/components/ui/overview-Item";
 import {
@@ -36,7 +36,7 @@ import { PendingTransactionsTable } from "./PendingTransactionsTable";
 
 interface DashboardClientProps {
   data: DashboardOverviewData;
-  categories: InvestmentCategoryDto[]
+  categories: CategoryDto[] | []
 }
 
 const formatTier = (tier?: string) => {
@@ -52,7 +52,7 @@ export default function DashboardClient({ data, categories }: DashboardClientPro
   const [showUpgradeTierModal, setShowUpgradeTierModal] =
     useState<boolean>(false);
 
-  const { user, wallet, activeInvestments, pendingTransactions, nextRoiDate } =
+  const { user, category,  wallet, activeInvestments, pendingTransactions, nextRoiDate } =
     data;
 
   // Calculate derived values with useMemo for performance
@@ -89,9 +89,9 @@ export default function DashboardClient({ data, categories }: DashboardClientPro
           {/* Balance Card */}
           <Card>
             <CardHeader className="pb-3">
-              { user?.investorTier && <div className="flex flex-wrap items-center justify-between gap-2">
+              { category?.code && <div className="flex flex-wrap items-center justify-between gap-2">
                 <CardTitle className="text-base sm:text-lg">
-                  {formatTier(user?.investorTier)} Investor
+                  {formatTier(category.code)} Investor
                 </CardTitle>
                 <Badge variant="outline" className="gap-1">
                   <Shield className="h-3 w-3" />
@@ -283,11 +283,11 @@ export default function DashboardClient({ data, categories }: DashboardClientPro
         availableBalance={wallet.currentBalance}
       />
 
-     {user?.investorTier && <UpgradeTierModal
+     {category?.code && <UpgradeTierModal
         isOpen={showUpgradeTierModal}
         onClose={() => setShowUpgradeTierModal(false)}
         investmentCategories={categories}
-        currentTier={user?.investorTier}
+        currentTier={category?.code}
       />}
     </div>
   );
