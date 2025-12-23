@@ -36,7 +36,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { BankDetails, InvestmentCategoryDto } from "@/types/type";
+import { BankDetails, CategoryDto } from "@/types/type";
 import {
   depositFormSchema,
   DepositFormValues,
@@ -54,7 +54,7 @@ import { useDepositStepStore } from "@/store/deposit.store";
 interface DepositModalProps {
   isOpen: boolean;
   onClose: () => void;
-  investmentCategories: InvestmentCategoryDto[];
+  investmentCategories: CategoryDto[];
 }
 
 interface FormState {
@@ -322,7 +322,7 @@ export function DepositModal({
         title="Make a Deposit"
         description="Complete the following steps to deposit funds into your investment account."
         className="w-full max-w-[95%] sm:max-w-[520px] md:max-w-[600px] lg:max-w-[680px]"
-        // disableOutsideClick={hasUnsavedProgress() && currentStep < 4}
+        disableClose={hasUnsavedProgress() && currentStep < 4}
       >
         <div className="px-1 sm:px-0">
           {/* Global Error Display - Only at top */}
@@ -395,7 +395,7 @@ export function DepositModal({
                           {investmentCategories.map((investment) => (
                             <SelectItem
                               key={investment.id}
-                              value={investment.id}
+                              value={investment?.code}
                             >
                               <div className="flex flex-col">
                                 <span className="font-medium">

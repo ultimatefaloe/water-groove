@@ -1,8 +1,7 @@
-import { ApiResponse, BankDetails } from '../../types/type';
-import { db } from "@/lib/db"
-import { DashboardOverviewData, InvestmentCategoryDto } from "@/types/type"
-import { mapBankDetailsToDto, mapInvestmentCategoryToDto, mapInvestmentWithCategoryToDto, mapTransactionToDto, mapUserToDto } from '@/utils/mapper';
-import { PlatformBankAccount, TransactionStatus, TransactionType } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
+import { DashboardOverviewData, CategoryDto, BankDetails, ApiResponse, TransactionDto, TransactionResponse, TransactionQueryParams, InvestmentDto } from "@/types/type"
+import { mapCategoryToDto, mapInvestmentToDto, mapInvestmentWithCategoryToDto, mapTransactionToDto, mapUserToDto } from '@/utils/mapper';
+import { TransactionStatus, TransactionType } from "@prisma/client"
 
 export async function getDashboardOverview(
   userId: string
@@ -10,22 +9,24 @@ export async function getDashboardOverview(
 
   const [
     user,
+    category,
     investments,
     transactions,
     pendingWithdrawalsTotal,
     pendingDepositsTotal
   ] = await Promise.all([
-    db.user.findUniqueOrThrow({ where: { id: userId } }),
-    db.investment.findMany({
+    prisma.user.findUniqueOrThrow({ where: { id: userId } }),
+    prisma.investmentCategory.findFirst({ where: { users: { some: { id: userId } } }, include: { users: false } }),
+    prisma.investment.findMany({
       where: { userId, status: "ACTIVE" },
       include: { category: true },
     }),
-    db.transaction.findMany({ where: { userId } }),
-    db.transaction.aggregate({
+    prisma.transaction.findMany({ where: { userId } }),
+    prisma.transaction.aggregate({
       where: { userId, type: TransactionType.WITHDRAWAL, status: TransactionStatus.PENDING },
       _sum: { amount: true } // assuming your transactions have an `amount` field
     }),
-    db.transaction.aggregate({
+    prisma.transaction.aggregate({
       where: { userId, type: TransactionType.DEPOSIT, status: TransactionStatus.PENDING },
       _sum: { amount: true } // same here
     }),
@@ -47,8 +48,11 @@ export async function getDashboardOverview(
     }
   )
 
+  console.log(category)
+
   return {
     user: mapUserToDto(user),
+    category: category ? mapCategoryToDto(category) : null,
     wallet: {
       ...wallet,
       currentBalance:
@@ -72,21 +76,21 @@ export async function getDashboardOverview(
 
 
 export async function getAllInvestmentCategory(): Promise<
-  ApiResponse<InvestmentCategoryDto[]>
+  ApiResponse<CategoryDto[]>
 > {
-  const ic = await db.investmentCategory.findMany()
+  const ic = await prisma.investmentCategory.findMany()
 
   return {
     success: true,
     message: "Investment categories retrieved successfully",
-    data: ic.map(mapInvestmentCategoryToDto)
+    data: ic.map(mapCategoryToDto)
   }
 }
 
 export async function getInvestmentCategory(
   id: string
-): Promise<ApiResponse<InvestmentCategoryDto | null>> {
-  const ic = await db.investmentCategory.findUnique({
+): Promise<ApiResponse<CategoryDto | null>> {
+  const ic = await prisma.investmentCategory.findUnique({
     where: { id }
   })
 
@@ -101,12 +105,12 @@ export async function getInvestmentCategory(
   return {
     success: true,
     message: "Investment category retrieved successfully",
-    data: mapInvestmentCategoryToDto(ic),
+    data: mapCategoryToDto(ic),
   }
 }
 
 export async function getPlatformBankDetails(): Promise<BankDetails | null> {
-  const details = await db.platformBankAccount.findFirst({
+  const details = await prisma.platformBankAccount.findFirst({
     where: {
       isActive: true,
       isDefault: true,
@@ -123,4 +127,85 @@ export async function getPlatformBankDetails(): Promise<BankDetails | null> {
     accountNumber: details.accountNumber,
     reference: `REF-WG-${Date.now()}`,
   }
+}
+
+export async function getTransactions(
+  userId: string,
+  query?: TransactionQueryParams
+): Promise<ApiResponse<TransactionResponse>> {
+  const page = Math.max(Number(query?.page) || 1, 1);
+  const limit = Math.min(Number(query?.limit) || 20, 100);
+  const skip = (page - 1) * limit;
+
+  const where = {
+    userId,
+    ...(query?.type && { type: query?.type }),
+    ...(query?.status && { status: query?.status }),
+    ...(query?.from || query?.to
+      ? {
+        createdAt: {
+          ...(query?.from && { gte: new Date(query?.from) }),
+          ...(query?.to && { lte: new Date(query?.to) }),
+        },
+      }
+      : {}),
+  };
+
+  const orderBy = {
+    [query?.sortBy ?? "createdAt"]: query?.sortOrder ?? "desc",
+  } as const;
+
+  const [transactions, total] = await Promise.all([
+    prisma.transaction.findMany({
+      where,
+      orderBy,
+      skip,
+      take: limit,
+    }),
+    prisma.transaction.count({ where }),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    success: true,
+    message: "Transactions retrieved successfully",
+    data: {
+      transactions: transactions.map(mapTransactionToDto),
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    }
+  };
+}
+
+export async function getInvestments(
+  userId: string,
+): Promise<ApiResponse<InvestmentDto[] | null>> {
+
+  try {
+    const ivst = await prisma.investment.findMany({
+      where: {
+        userId: userId
+      }
+    })
+
+    return {
+      success: true,
+      message: "Transactions retrieved successfully",
+      data: ivst.map(mapInvestmentToDto)
+    };
+
+  } catch (error: any) {
+    console.error(error)
+    return {
+      success: false,
+      message: error.message || "Something went wrong",
+      data: null
+    }
+  }
+
 }

@@ -1,9 +1,10 @@
 "use server";
 
-import { depositFormSchema, proofUploadSchema } from "@/lib/zod";
-import { BankDetails, CreateDeposit } from "@/types/type";
+import { depositFormSchema, proofUploadSchema, withdrawalFormSchema } from "@/lib/zod";
+import { BankDetails, CreateDeposit, WithdrawalRequestDto } from "@/types/type";
 import { uploadFileAction } from "./upload.action";
-import { createDepositService, uploadDepositProofService } from "@/services/client/cud.service";
+import { createDepositService, uploadDepositProofService, withdrawalRequestService } from "@/services/client/cud.service";
+import { z } from 'zod'
 
 export type DepositActionState = {
   success: boolean;          // always set
@@ -20,14 +21,25 @@ export type UploadProofActionState = {
   }
 };
 
+export type WithdrawalActionState = {
+  success: boolean;
+  error?: string;
+  validationErrors?: Partial<Record<keyof z.infer<typeof withdrawalFormSchema>, string[]>>;
+  message?: string;
+  data?: {
+    reference: string
+  }
+};
+
+
 export async function createDeposit(
   _prevState: DepositActionState,
   formData: FormData
 ): Promise<DepositActionState> {
   const rawData: CreateDeposit = {
-    investmentCatId: String(formData.get("investmentCatId")),
+    investmentCatId: formData.get("investmentCatId") as string,
     amount: Number(formData.get("amount")),
-    description: String(formData.get("description")),
+    description: formData.get("description") as string,
   };
 
 
@@ -59,7 +71,7 @@ export async function createDeposit(
       bankDetails: res.data ? { ...res.data } : undefined
     };
 
-  } catch(err) {
+  } catch (err) {
     console.log(err)
     // ✅ unexpected failure
     return {
@@ -78,14 +90,6 @@ export async function createProofUpload(
     reference: formData.get("reference") ? String(formData.get("reference")) : ""
   };
 
-  // Check if file is provided
-  if (!rawData.proofFile) {
-    return {
-      success: false,
-      error: "No proof file uploaded. Please select a file to continue."
-    };
-  }
-
   // Validate the data with schema
   const parsed = proofUploadSchema.safeParse(rawData);
   if (!parsed.success) {
@@ -97,7 +101,7 @@ export async function createProofUpload(
 
   // Upload the file
   const res = await uploadFileAction(formData);
-  console.log('Upload response: ',res);
+  console.log('Upload response: ', res);
 
   if (!res.success || !res.proofUrl) {
     return {
@@ -114,8 +118,8 @@ export async function createProofUpload(
   // Simulate saving to DB or API
   const result = await uploadDepositProofService(data.proofUrl)
 
-  if(!result) {
-     return {
+  if (!result) {
+    return {
       success: false,
       error: "Failed to save uploaded proof url."
     };
@@ -127,5 +131,40 @@ export async function createProofUpload(
       // proofFile: data.proofUrl,
       reference: data.reference
     }
+  };
+}
+
+export async function withdrawaRequestAction(
+  _prevState: WithdrawalActionState,
+  formData: FormData
+): Promise<WithdrawalActionState> {
+  const rawData: WithdrawalRequestDto = {
+    bankName: formData.get("bankName") as string,
+    accountHolderName: formData.get("accountHolderName") as string,
+    accountNumber: formData.get("accountNumber") as string,
+    amount: Number(formData.get("amount")),
+  };
+
+  // Validate the data with schema
+  const parsed = withdrawalFormSchema.safeParse(rawData);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: "Invalid withdrawal request data."
+    };
+  }
+  // Simulate saving to DB or API
+  const result = await withdrawalRequestService({ ...rawData })
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.message || "Failed to save uploaded proof url."
+    };
+  }
+
+  return {
+    success: true,
+    message: result.message || "Withdrawal request successfully"
   };
 }

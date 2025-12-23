@@ -6,7 +6,10 @@ export const db = {
   investmentCategory: prisma.investmentCategory,
   investment: prisma.investment,
   transaction: prisma.transaction,
-  platformBankAccount: prisma.platformBankAccount
+  platformBankAccount: prisma.platformBankAccount,
+  investorBalance: prisma.investorBalance,
+  withdrawalDetail: prisma.withdrawalDetail,
+  $transaction : prisma.$transaction
 };
 
 export type DB = typeof db;

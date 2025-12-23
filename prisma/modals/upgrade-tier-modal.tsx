@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { InvestmentCategoryDto } from "@/types/type";
+import { CategoryDto } from "@/types/type";
 import { DepositModal } from "./deposit-modal";
 import { UpgradeFormValues, upgradeFormSchema } from "@/lib/zod";
 import { InvestorTier } from "@prisma/client";
@@ -28,7 +28,7 @@ interface UpgradeTierModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentTier?: string;
-  investmentCategories: InvestmentCategoryDto[];
+  investmentCategories: CategoryDto[];
 }
 
 export function UpgradeTierModal({
