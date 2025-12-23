@@ -8,7 +8,6 @@ import {
   LogOut,
   Settings,
 } from "lucide-react";
-import { dashboardNavItems } from "@/config/navigations";
 import clsx from "clsx";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
@@ -20,6 +19,7 @@ import Image from "next/image";
 interface SidebarProps {
   pathname: string;
   onNavigate: () => void;
+  navItem: NavLinks[]
 }
 
 const secondaryNavItems: NavLinks[] = [
@@ -40,7 +40,7 @@ const secondaryNavItems: NavLinks[] = [
   },
 ];
 
-export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
+export function DashboardSidebar({ pathname, onNavigate, navItem }: SidebarProps) {
   const router = useRouter();
 
   const { user, error, isLoading } = useUser();
@@ -72,7 +72,7 @@ export function DashboardSidebar({ pathname, onNavigate }: SidebarProps) {
 
       {/* Main Navigation */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-        {dashboardNavItems.map((item) => {
+        {navItem.map((item) => {
           const active = pathname === item.href;
           const Icon = item.icon;
 

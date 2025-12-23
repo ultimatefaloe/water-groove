@@ -24,7 +24,11 @@ export default function DashboardShell({ children }: Props) {
     <div className="flex min-h-screen bg-white">
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden md:flex w-64 lg:w-72">
-        <DashboardSidebar pathname={pathname} onNavigate={() => {}} />
+        <DashboardSidebar
+          pathname={pathname}
+          onNavigate={() => {}}
+          navItem={dashboardNavItems}
+        />
       </aside>
 
       {/* MOBILE SIDEBAR */}
@@ -33,6 +37,7 @@ export default function DashboardShell({ children }: Props) {
           <DashboardSidebar
             pathname={pathname}
             onNavigate={() => setMobileOpen(false)}
+            navItem={dashboardNavItems}
           />
         </SheetContent>
       </Sheet>

@@ -44,7 +44,7 @@ export default async function DashboardPage() {
 
     return (
       <Suspense fallback={<p>Loading...</p>}>
-        {/* <AdminDashboardClient data={formattedData} categories={investmemtCategoeies.data ?? []} /> */}
+        <h1>Admin Dashboard</h1>
       </Suspense>
     );
   } catch (error) {
