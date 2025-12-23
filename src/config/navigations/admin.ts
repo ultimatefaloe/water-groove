@@ -11,7 +11,7 @@ import {
 export const adminNavItems: NavLinks[] = [
   {
     title: "Dashboard",
-    href: "/admin",
+    href: "/admin/dashboard",
     icon: ShieldCheck,
   },
   {
@@ -34,9 +34,9 @@ export const adminNavItems: NavLinks[] = [
     href: "/admin/reports",
     icon: FileBarChart,
   },
-  {
-    title: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
-  },
+  // {
+  //   title: "Settings",
+  //   href: "/admin/settings",
+  //   icon: Settings,
+  // },
 ];
