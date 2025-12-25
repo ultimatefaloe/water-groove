@@ -77,7 +77,7 @@ export async function getAllInvestments(
 
     const where = {
       userId: params.userId,
-      categoryId: params.catergoryId,
+      categoryId: params.categoryId,
       status: params.status,
       startDate: params.startDate ? { gte: params.startDate } : undefined,
       endDate: params.endDate ? { lte: params.endDate } : undefined
@@ -193,13 +193,21 @@ export async function getAdminDashboardOverview(
 
       prisma.investment.aggregate({
         _sum: { principalAmount: true },
-        _count: true
+        _count: {
+          _all: true
+        }
       }),
-
       prisma.transaction.groupBy({
         by: ["type", "status"],
-        _sum: { amount: true },
-        _count: true
+        orderBy: {
+          type: "asc"
+        },
+        _sum: {
+          amount: true
+        },
+        _count: {
+          _all: true
+        }
       })
     ])
 
@@ -207,31 +215,49 @@ export async function getAdminDashboardOverview(
     const totalWithdrawal = transactions.find(t => t.type === TransactionType.WITHDRAWAL)
     const totalRoi = transactions.find(t => t.type === TransactionType.INTEREST)
 
+    const totalDepositCount =
+      typeof totalDeposit?._count === "object"
+        ? totalDeposit._count._all ?? 0
+        : 0
+
+    const totalWithdrawalCount =
+      typeof totalWithdrawal?._count === "object"
+        ? totalWithdrawal._count._all ?? 0
+        : 0
+
+
     const data: AdminDashboardOverview = {
-      totalPrincipalAmount: Number(investments._sum.principalAmount) ?? 0,
-      totalInvestment: investments._count,
+      totalPrincipalAmount: Number(investments._sum.principalAmount ?? 0),
+      totalInvestment: investments._count?._all,
       totalUsers: users,
 
-      totalDepositAmount: Number(totalDeposit?._sum.amount) ?? 0,
-      totalWithdrawalAmount: Number(totalWithdrawal?._sum.amount) ?? 0,
-      totalRoiPaidAmount: Number(totalRoi?._sum.amount) ?? 0,
+      totalDepositAmount: Number(totalDeposit?._sum?.amount ?? 0),
+      totalWithdrawalAmount: Number(totalWithdrawal?._sum?.amount ?? 0),
+      totalRoiPaidAmount: Number(totalRoi?._sum?.amount ?? 0),
 
-      totalDeposit: totalDeposit?._count ?? 0,
-      totalWithdrawal: totalWithdrawal?._count ?? 0,
+      totalDeposit: totalDepositCount,
+      totalWithdrawal: totalWithdrawalCount,
 
-      totalPendingDeposit: transactions.filter(t =>
-        t.type === TransactionType.DEPOSIT && t.status === TransactionStatus.PENDING
+      totalPendingDeposit: transactions.filter(
+        t =>
+          t.type === TransactionType.DEPOSIT &&
+          t.status === TransactionStatus.PENDING
       ).length,
 
-      totalPendingWithdrawal: transactions.filter(t =>
-        t.type === TransactionType.WITHDRAWAL && t.status === TransactionStatus.PENDING
+      totalPendingWithdrawal: transactions.filter(
+        t =>
+          t.type === TransactionType.WITHDRAWAL &&
+          t.status === TransactionStatus.PENDING
       ).length,
 
-      totalActiveInvestment: 0, // can be extended
+      totalActiveInvestment: 0,
       totalPendingInvestment: 0,
 
       systemHealth: "HEALTHY"
     }
+
+
+
 
     return { success: true, message: "", data }
   } catch (error: any) {

@@ -4,7 +4,6 @@ import { getServerAdmin } from "@/lib/server/auth0-server";
 import { getAdminDashboardOverview } from "@/services/admin/r.service";
 import AdminDashboardClient from "../_components/AdminDashboardClient";
 import { AdminDashboardOverview } from "@/types/adminType";
-import { ApiResponse } from "@/types/type";
 
 export const metadata: Metadata = {
   title: "Admin Dashboard | Water Groove",
