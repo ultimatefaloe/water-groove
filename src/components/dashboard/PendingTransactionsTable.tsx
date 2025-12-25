@@ -1,10 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  CheckCircle,
-  Clock,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle, Clock, XCircle } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -24,37 +20,30 @@ import {
 import { formatCurrency, formatDate, getStatusColor } from "@/lib/utils";
 import { DashboardOverviewData } from "@/types/type";
 import { TransactionStatus, TransactionType } from "@prisma/client";
+import Link from "next/link";
 
-  // Memoized helper functions
- const getStatusIcon = (status: TransactionStatus) => {
-    switch (status) {
-      case TransactionStatus.APPROVED:
-      case TransactionStatus.PAID:
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case TransactionStatus.PENDING:
-        return <Clock className="h-4 w-4 text-amber-500" />;
-      case TransactionStatus.REJECTED:
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return null;
-    }
-  };
+// Memoized helper functions
+const getStatusIcon = (status: TransactionStatus) => {
+  switch (status) {
+    case TransactionStatus.APPROVED:
+    case TransactionStatus.PAID:
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
+    case TransactionStatus.PENDING:
+      return <Clock className="h-4 w-4 text-amber-500" />;
+    case TransactionStatus.REJECTED:
+      return <XCircle className="h-4 w-4 text-red-500" />;
+    default:
+      return null;
+  }
+};
 
 export const PendingTransactionsTable = ({
   transactions,
 }: {
   transactions: DashboardOverviewData["pendingTransactions"];
 }) => (
-  <Card className="lg:col-span-3">
-    <CardHeader className="flex flex-row items-center justify-between">
-      <div>
-        <CardTitle>Pending Transactions</CardTitle>
-        <CardDescription>Transactions awaiting approval</CardDescription>
-      </div>
-      <Button variant="outline" size="sm">
-        View All
-      </Button>
-    </CardHeader>
+  <Card>
+   
     <CardContent>
       <Table>
         <TableHeader>
@@ -104,12 +93,12 @@ export const PendingTransactionsTable = ({
         </TableBody>
       </Table>
     </CardContent>
-    <CardFooter className="flex-col items-start gap-2">
+    <CardFooter className="flex-col items-start gap-2 pb-5">
       <div className="flex items-center justify-between w-full">
         <div className="text-sm text-muted-foreground">
           Showing {transactions.length} pending transactions
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col lg:flex-row items-center gap-1 lg:gap-4">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-green-500" />
             <span className="text-xs">Approved</span>

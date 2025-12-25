@@ -6,15 +6,15 @@ import { getDbHealth } from "@/lib/prisma";
 
 export async function GET() {
   console.log('Endpoint reached')
-  const db = await getDbHealth();
+  const prisma = await getDbHealth();
 
-  const statusCode = db.status === "healthy" ? 200 : 503;
+  const statusCode = prisma.status === "healthy" ? 200 : 503;
 
   return NextResponse.json(
     {
-      status: db.status,
+      status: prisma.status,
       services: {
-        database: db,
+        database: prisma,
       },
     },
     { status: statusCode }

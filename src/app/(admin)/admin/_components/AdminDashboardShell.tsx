@@ -6,7 +6,7 @@ import { Menu, Bell } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { dashboardNavItems } from "@/navigations";
+import { adminNavItems } from "@/config/navigations";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 
 interface Props {
@@ -18,13 +18,13 @@ export default function AdminDashboardShell({ children }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const pageTitle =
-    dashboardNavItems.find((i) => pathname === i.href)?.title ?? "Dashboard";
+    adminNavItems.find((i) => pathname === i.href)?.title ?? "Dashboard";
 
   return (
     <div className="flex min-h-screen bg-white">
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden md:flex w-64">
-        <DashboardSidebar pathname={pathname} onNavigate={() => {}} />
+      <aside className="hidden md:flex w-64 lg:w-72">
+        <DashboardSidebar pathname={pathname} onNavigate={() => {}} navItem={adminNavItems}/>
       </aside>
 
       {/* MOBILE SIDEBAR */}
@@ -33,6 +33,7 @@ export default function AdminDashboardShell({ children }: Props) {
           <DashboardSidebar
             pathname={pathname}
             onNavigate={() => setMobileOpen(false)}
+            navItem={adminNavItems}
           />
         </SheetContent>
       </Sheet>
@@ -50,7 +51,7 @@ export default function AdminDashboardShell({ children }: Props) {
             <Menu className="h-5 w-5" />
           </Button>
 
-          <h1 className="ml-3 text-lg font-semibold">{pageTitle}</h1>
+          <h1 className="ml-3 text-lg font-semibold">Admim | {pageTitle}</h1>
 
           <div className="ml-auto flex items-center gap-2">
             <Button variant="ghost" size="icon">

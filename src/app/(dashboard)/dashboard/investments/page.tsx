@@ -1,13 +1,25 @@
-import { Metadata } from 'next'
+import { Metadata } from "next";
+import { getInvestments } from "@/services/client/r.service";
+import { getServerUserId } from "@/lib/server/auth0-server";
+import InvestmentClient from "../_components/InvestmentClient";
 
+export const metadata: Metadata = {
+  title: "Transactions | WG",
+  description: "View and manage your transaction history",
+};
 
-export const metadata:Metadata = {
-  title: "Investments | WG"
-}
-const Investments = () => {
+const Transactions = async () => {
+
+  const userId = await getServerUserId();
+  const res = await getInvestments(userId);
+
+  const data = res?.data ?? []
+
   return (
-    <div>Investments</div>
-  )
-}
+    <div className="">
+      <InvestmentClient investments={data} />
+    </div>
+  );
+};
 
-export default Investments
+export default Transactions;

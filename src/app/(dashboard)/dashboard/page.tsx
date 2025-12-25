@@ -1,15 +1,18 @@
 import { Suspense } from "react";
-import { DashboardSkeleton } from "./_components/dashboard/DashboardSkeleton";
-import DashboardClient from "./_components/dashboard/DashboardClient";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import DashboardClient from "./_components/DashboardClient";
 import { Metadata } from "next";
-import { getAllInvestmentCategory, getDashboardOverview } from "@/services/client/r.service";
+import {
+  getAllInvestmentCategory,
+  getDashboardOverview,
+} from "@/services/client/r.service";
 import { getServerUser } from "@/lib/server/auth0-server";
-import { DashboardOverviewData } from "@/types/type";
+import { ApiResponse, CategoryDto, DashboardOverviewData } from "@/types/type";
 
 export const metadata: Metadata = {
   title: "Dashboard | Water Groove",
-  description: "Secure your future with water groove investment"
-}
+  description: "Secure your future with water groove investment",
+};
 
 // Helper function to format the dashboard data with proper types
 function formatDashboardData(data: DashboardOverviewData, auth0User: any) {
@@ -19,8 +22,9 @@ function formatDashboardData(data: DashboardOverviewData, auth0User: any) {
       // Ensure user data matches the Auth0 user
       id: data.user.id,
       email: data.user.email || auth0User.email,
-      fullName: data.user.fullName || auth0User.name || 'User',
+      fullName: data.user.fullName || auth0User.name || "User",
     },
+    category: data.category,
     wallet: data.wallet,
     activeInvestments: data.activeInvestments,
     pendingTransactions: data.pendingTransactions,
@@ -32,34 +36,72 @@ export default async function DashboardPage() {
   try {
     // Get Auth0 user on server side
     const auth0User = await getServerUser();
-    
+
     // Fetch dashboard data
     const dashboardData = await getDashboardOverview(auth0User.id);
-    const investmemtCategoeies = await getAllInvestmentCategory()
-    
+    const investmemtCategoeies = await getAllInvestmentCategory();
+
     // Format and validate data
     const formattedData = formatDashboardData(dashboardData, auth0User);
 
-    console.log({
-      formattedData,
-    })
-
     return (
       <Suspense fallback={<DashboardSkeleton />}>
-        <DashboardClient data={formattedData} categories={investmemtCategoeies?.data} />
+        <DashboardClient
+          data={formattedData}
+          categories={investmemtCategoeies.data ?? []}
+        />
       </Suspense>
     );
-  } catch (error) {
-    console.error('Error loading dashboard:', error);
-    
-    // Return error state
+  } catch (error: any) {
+    console.log("Error loading dashboard:", error.message);
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600">Error Loading Dashboard</h2>
-          <p className="text-muted-foreground mt-2">
-            Please try again or contact support.
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div
+          role="alert"
+          className="w-full max-w-md rounded-2xl border border-wg-accent/30 bg-wg-secondary/40 p-6 text-center shadow-lg"
+        >
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-wg-accent/10">
+            <svg
+              className="h-6 w-6 text-wg-accent"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v3.75M12 15.75h.007M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+
+          <h2 className="text-xl font-semibold text-wg-accent">
+            Dashboard failed to load
+          </h2>
+
+          <p className="mt-2 text-sm text-muted-foreground">
+            {error.message ||
+              `Something went wrong while loading your dashboard. Please try again,
+            or contact support if the problem persists.`}
           </p>
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <a
+              href="#"
+              // onClick={() => window.location.reload()}
+              className="rounded-lg bg-wg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-wg-accent/90 focus:outline-none focus:ring-2 focus:ring-wg-accent/50"
+            >
+              Retry
+            </a>
+
+            <a
+              href="/support"
+              className="rounded-lg border border-wg-accent/40 px-4 py-2 text-sm font-medium text-wg-accent transition hover:bg-wg-accent/10 focus:outline-none focus:ring-2 focus:ring-wg-accent/50"
+            >
+              onClick Contact Support
+            </a>
+          </div>
         </div>
       </div>
     );

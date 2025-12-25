@@ -1,15 +1,15 @@
-import { db } from "@/lib/db"
+import { prisma } from "@/lib/prisma"
 import { getServerUserId } from "@/lib/server/auth0-server"
-import { ApiResponse, BankDetails, CreateDeposit } from "@/types/type"
+import { ApiResponse, BankDetails, CreateDeposit, WithdrawalRequestDto } from "@/types/type"
 import { TransactionStatus, TransactionType } from "@prisma/client"
 import { getPlatformBankDetails } from "./r.service"
 
 
 export async function validateTierAmount(amount: number, catId: string) {
 
-  const ic = await db.investmentCategory.findFirst({
+  const ic = await prisma.investmentCategory.findFirst({
     where: {
-      id: catId
+      code: catId
     }
   })
 
@@ -64,51 +64,62 @@ export async function createDepositService({
     message: "Invalid userId",
     data: null
   }
-  console.log({ amount, investmentCatId, description })
 
- const { success, message, data} = await validateTierAmount(amount, investmentCatId)
+  const { success, message, data } = await validateTierAmount(amount, investmentCatId)
 
- if(!success) return {
-  success: false,
-  message,
-  data: null
- };
+  if (!success && data) return {
+    success: false,
+    message,
+    data: null
+  };
 
- const inst = await db.investment.create({
-    data: {
-      userId,
-      categoryId: investmentCatId,
-      principalAmount: amount,
-      roiRateSnapshot: data?.monthlyRoiRate ? data.monthlyRoiRate : 2,
-      durationMonths: data?.durationMonths ? data.durationMonths : 18,
-    }
-  })
+  try {
+    await prisma.$transaction(async (tx) => {
+      const ivst = await tx.investment.create({
+        data: {
+          userId,
+          categoryId: data ? data?.id : '',
+          principalAmount: amount,
+          roiRateSnapshot: data?.monthlyRoiRate ?? 2,
+          durationMonths: data?.durationMonths ?? 18,
+        }
+      })
 
-  if(!inst){
+      await tx.transaction.create({
+        data: {
+          userId,
+          investmentId: ivst?.id,
+          type: TransactionType.DEPOSIT,
+          status: TransactionStatus.PENDING,
+          amount,
+          description,
+        }
+      })
+
+      await tx.investorBalance.create({
+        data: {
+          investmentId: ivst.id,
+          principalLocked: amount,
+          createdAt: new Date(),
+        },
+      })
+    })
+
+    const bds = await getPlatformBankDetails()
+
     return {
-      success: false,
-      message: "Failed to create investment",
-      data: null
+      success: true,
+      message: "Transaction created successfully, upload proof of payment",
+      data: bds
+    }
+  } catch (error: any) {
+    console.error(error)
+    return {
+      success: true,
+      message: error.message || "Something went wrong",
     }
   }
 
-  await db.transaction.create({
-    data: {
-      userId,
-      investmentId: inst?.id,
-      type: TransactionType.DEPOSIT,
-      amount,
-      description,
-    }
-  })
-
-  const bds = await getPlatformBankDetails()
-
-  return {
-    success: true,
-    message: "Transaction created successfully, upload proof of payment",
-    data: bds
-  }
 }
 
 export async function uploadDepositProofService(
@@ -124,7 +135,7 @@ export async function uploadDepositProofService(
     }
   }
 
-  const txn = await db.transaction.findFirst({
+  const txn = await prisma.transaction.findFirst({
     where: {
       userId,
       type: TransactionType.DEPOSIT,
@@ -140,13 +151,13 @@ export async function uploadDepositProofService(
     }
   }
 
-  await db.transaction.update({
+  await prisma.transaction.update({
     where: {
       id: txn.id
     },
     data: {
       proofUrl,
-      updatedAt: new Date() 
+      updatedAt: new Date()
     }
   })
 
@@ -156,4 +167,77 @@ export async function uploadDepositProofService(
     message: "Proof of paymnet uploaded successfully",
     data: null
   }
+}
+
+
+export async function withdrawalRequestService({
+  bankName,
+  accountNumber,
+  accountHolderName,
+  amount,
+  earlyWithdrawal
+}: WithdrawalRequestDto): Promise<ApiResponse<WithdrawalRequestDto | null>> {
+
+  const userId = await getServerUserId()
+
+  if (!userId) return {
+    success: false,
+    message: "Invalid userId",
+    data: null
+  }
+
+  try {
+    const inst = await prisma.investment.findFirst({
+      where: {
+        userId
+      }
+    })
+    const balance = await prisma.investorBalance.findUniqueOrThrow({
+      where: { investmentId: inst?.id },
+    })
+
+    if (earlyWithdrawal) {
+      if (+amount > Number(balance?.availableBalance) + Number(balance?.principalLocked)) {
+        throw new Error("Insufficient balance")
+      }
+    } else {
+      if (+amount > Number(balance?.availableBalance)) {
+        throw new Error("Insufficient balance")
+      }
+    }
+
+    const txn = await prisma.transaction.create({
+      data: {
+        userId,
+        investmentId: inst?.id,
+        type: TransactionType.WITHDRAWAL,
+        amount: +amount,
+        status: TransactionStatus.PENDING,
+        earlyWithdrawal: earlyWithdrawal ? true : false
+      },
+    })
+
+    await prisma.withdrawalDetail.create({
+      data: {
+        transactionId: txn.id,
+        accountHolderName: String(accountHolderName),
+        accountNumber: String(accountNumber),
+        bankName: String(bankName),
+      },
+    })
+
+    return {
+      success: true,
+      message: "Withdrawal request created successfully, wait while we process you request",
+      data: null
+    }
+  } catch (error: any) {
+    console.error(error)
+    return {
+      success: false,
+      message: error.message,
+      data: null
+    }
+  }
+
 }

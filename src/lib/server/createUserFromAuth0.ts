@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
 export async function createUserFromAuth0(auth0User: any) {
@@ -6,15 +6,15 @@ export async function createUserFromAuth0(auth0User: any) {
     const auth0Id = auth0User?.sub;
     if (!auth0Id) return null;
 
-    const existingUser = await db.user.findUnique({
-      where: { auth0Id },
+    const existingUser = await prisma.user.findUnique({
+      where: { auth_Id: auth0Id },
     });
 
     if (existingUser) return existingUser;
 
-    const createdUser =  await db.user.create({
+    const createdUser =  await prisma.user.create({
       data: {
-        auth0Id,
+        auth_Id: auth0Id,
         email: auth0User.email ?? null,
         fullName: auth0User.name ?? null,
         picture: auth0User.picture ?? null,
