@@ -1,78 +1,103 @@
 import { prisma } from "@/lib/prisma"
-import { DashboardOverviewData, CategoryDto, BankDetails, ApiResponse, TransactionDto, TransactionResponse, TransactionQueryParams, InvestmentDto } from "@/types/type"
-import { mapCategoryToDto, mapInvestmentToDto, mapInvestmentWithCategoryToDto, mapTransactionToDto, mapUserToDto } from '@/utils/mapper';
-import { TransactionStatus, TransactionType } from "@prisma/client"
+import { DashboardOverviewData, CategoryDto, BankDetails, ApiResponse, TransactionResponse, TransactionQueryParams, InvestmentDto } from "@/types/type"
+import { mapCategoryToDto, mapInvestmentToDto, mapInvestmentWithCategoryToDto, mapTransactionToAdminRow, mapTransactionToDto, mapUserToDto } from '@/utils/mapper';
+import { InvestmentStatus, TransactionStatus, TransactionType } from "@prisma/client"
 
 export async function getDashboardOverview(
   userId: string
 ): Promise<DashboardOverviewData> {
 
+  // 1️⃣ User
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+  });
+
+  // 2️⃣ Active investments + category
+  const investments = await prisma.investment.findMany({
+    where: {
+      userId,
+      status: InvestmentStatus.ACTIVE
+    },
+    include: {
+      category: true,
+      investorBalance: true,
+    },
+  });
+
+  // 3️⃣ Wallet (aggregated across investments)
+  const walletAgg = await prisma.investorBalance.aggregate({
+    where: {
+      investment: {
+        userId,
+      },
+    },
+    _sum: {
+      totalDeposited: true,
+      totalWithdrawn: true,
+      roiAccrued: true,
+      availableBalance: true,
+    },
+  });
+
+  // 4️⃣ Transactions + pending aggregates (parallel)
   const [
-    user,
-    category,
-    investments,
     transactions,
-    pendingWithdrawalsTotal,
-    pendingDepositsTotal
+    pendingWithdrawalsAgg,
+    pendingDepositsAgg,
   ] = await Promise.all([
-    prisma.user.findUniqueOrThrow({ where: { id: userId } }),
-    prisma.investmentCategory.findFirst({ where: { users: { some: { id: userId } } }, include: { users: false } }),
-    prisma.investment.findMany({
-      where: { userId, status: "ACTIVE" },
-      include: { category: true },
-    }),
-    prisma.transaction.findMany({ where: { userId } }),
-    prisma.transaction.aggregate({
-      where: { userId, type: TransactionType.WITHDRAWAL, status: TransactionStatus.PENDING },
-      _sum: { amount: true } // assuming your transactions have an `amount` field
+    prisma.transaction.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
     }),
     prisma.transaction.aggregate({
-      where: { userId, type: TransactionType.DEPOSIT, status: TransactionStatus.PENDING },
-      _sum: { amount: true } // same here
+      where: {
+        userId,
+        type: TransactionType.WITHDRAWAL,
+        status: TransactionStatus.PENDING,
+      },
+      _sum: { amount: true },
+    }),
+    prisma.transaction.aggregate({
+      where: {
+        userId,
+        type: TransactionType.DEPOSIT,
+        status: TransactionStatus.PENDING,
+      },
+      _sum: { amount: true },
     }),
   ]);
 
-
-  const wallet = transactions.reduce(
-    (acc, tx) => {
-      if (tx.status !== "APPROVED" && tx.status !== "PAID") return acc
-      if (tx.type === "DEPOSIT") acc.totalDeposits += Number(tx.amount)
-      if (tx.type === "WITHDRAWAL") acc.totalWithdrawals += Number(tx.amount)
-      if (tx.type === "INTEREST") acc.totalInterest += Number(tx.amount)
-      return acc
-    },
-    {
-      totalDeposits: 0,
-      totalWithdrawals: 0,
-      totalInterest: 0,
-    }
-  )
-
-  console.log(category)
+  // 5️⃣ Pick category from first active investment (if any)
+  const category =
+    investments.length > 0 ? investments[0].category : null;
 
   return {
     user: mapUserToDto(user),
+
     category: category ? mapCategoryToDto(category) : null,
+
     wallet: {
-      ...wallet,
-      currentBalance:
-        wallet.totalDeposits +
-        wallet.totalInterest -
-        wallet.totalWithdrawals,
-      pendingWithdrawals: Number(pendingWithdrawalsTotal?._sum?.amount),
-      pendingDeposits: Number(pendingDepositsTotal?._sum?.amount),
+      totalDeposits: Number(walletAgg._sum.totalDeposited ?? 0),
+      totalWithdrawals: Number(walletAgg._sum.totalWithdrawn ?? 0),
+      totalInterest: Number(walletAgg._sum.roiAccrued ?? 0),
+      currentBalance: Number(walletAgg._sum.availableBalance ?? 0),
+      pendingWithdrawals: Number(pendingWithdrawalsAgg._sum.amount ?? 0),
+      pendingDeposits: Number(pendingDepositsAgg._sum.amount ?? 0),
     },
+
     activeInvestments: investments.map(inv =>
       mapInvestmentWithCategoryToDto(
         inv,
-        wallet.totalInterest
+        Number(inv.investorBalance?.roiAccrued ?? 0)
       )
     ),
+
     pendingTransactions: transactions
       .filter(t => t.status === TransactionStatus.PENDING)
       .map(mapTransactionToDto),
-  }
+  };
 }
+
 
 
 export async function getAllInvestmentCategory(): Promise<
@@ -171,7 +196,7 @@ export async function getTransactions(
     success: true,
     message: "Transactions retrieved successfully",
     data: {
-      transactions: transactions.map(mapTransactionToDto),
+      transactions: transactions.map(mapTransactionToAdminRow),
       total,
       page,
       limit,

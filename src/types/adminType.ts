@@ -4,6 +4,7 @@ import {
   InvestmentStatus,
   TransactionType,
   TransactionStatus,
+  Prisma,
 } from "@prisma/client"
 
 // ==============================
@@ -16,31 +17,40 @@ export interface AdminSession {
   email: string
 }
 
+export interface PaginatedResponse<T> {
+  data: T
+  total: number // Total number of transactions matching filter (without pagination)
+  page: number // Current page number
+  limit: number // Number of items per page
+  totalPages: number // Total number of pages
+  hasNextPage: boolean // Whether there's a next page
+  hasPreviousPage: boolean // Whether there's a previous page
+}
+
 export interface AdminDashboardOverview {
+  totalPrincipalAmount: number
+  totalRoiPaidAmount: number
+  totalDepositAmount: number
+  totalWithdrawalAmount: number
   totalUsers: number
-  totalActiveInvestments: number
-  totalCapitalInvested: number
-  totalRoiPaid: number
-
-  pendingDeposits: number
-  pendingWithdrawals: number
-  pendingRoiApprovals: number
-
+  totalInvestment: number
+  totalPendingInvestment: number
+  totalActiveInvestment: number
+  totalDeposit: number
+  totalPendingDeposit: number
+  totalWithdrawal: number
+  totalPendingWithdrawal: number
   systemHealth: "HEALTHY" | "WARNING" | "CRITICAL"
 }
 
 export interface AdminUserRow {
-  id: string
+ id: string
   fullName: string
   email: string
-  investorTier?: InvestorTier
+  phone?: string
   isActive: boolean
-
-  totalDeposits: number
-  totalInvestments: number
-  walletBalance: number
-
-  createdAt: string
+  createdAt: Date
+  investmentCategoryId: string
 }
 
 export interface AdminUserDetail {
@@ -52,32 +62,33 @@ export interface AdminUserDetail {
 export interface AdminInvestmentRow {
   id: string
   userId: string
-  userName: string
+  categoryId: string
 
-  categoryName: string
   principalAmount: number
   roiRateSnapshot: number
+  durationMonths: number
 
   status: InvestmentStatus
-  startDate?: string
-  endDate?: string
+  startDate?: Date
+  endDate?: Date
 
-  createdAt: string
+  createdAt: Date
 }
 
 export interface AdminTransactionRow {
   id: string
   userId: string
-  userName: string
-
   investmentId?: string
+
   type: TransactionType
   status: TransactionStatus
-
   amount: number
-  proofUrl?: string
 
-  createdAt: string
+  proofUrl?: string
+  description?: string
+
+  processedAt?: Date
+  createdAt: Date
 }
 
 export interface ApproveTransactionPayload {
@@ -152,4 +163,27 @@ export interface AdminLayoutData {
   }
   permissions: AdminPermission
   children: React.ReactNode
+}
+
+export interface AdminTransactionQueryParams {
+  status?: TransactionStatus;
+  order?: Prisma.SortOrder
+  date?: Date;
+  transactionId?: string
+}
+
+export interface AdminInvestmentQueryParams {
+  userId?: string
+  categoryId?: string
+  status?: InvestmentStatus
+  startDate?: Date
+  endDate?: Date
+  order?: Prisma.SortOrder
+}
+
+export interface AdminUserQueryParams {
+  fullName?: string
+  email?: string
+  isActive?: boolean
+  investmentCategoryId?: string
 }

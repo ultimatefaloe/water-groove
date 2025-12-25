@@ -102,7 +102,7 @@ model InvestmentCategory {
   minAmount Decimal  @db.Decimal(15, 2)
   maxAmount Decimal? @db.Decimal(15, 2)
 
-  monthlyRoiRate Decimal @db.Decimal(5, 2)
+  monthlyRoiRate Decimal @db.Decimal(5, 2) @default(0.02)
   durationMonths Int // e.g. 18
 
   description String?
@@ -129,7 +129,7 @@ model Investment {
 
   principalAmount Decimal @db.Decimal(15, 2)
 
-  roiRateSnapshot Decimal @db.Decimal(5, 2)
+  roiRateSnapshot Decimal @db.Decimal(5, 2) @default(0.02)
   durationMonths  Int
 
   status InvestmentStatus @default(PENDING_PAYMENT)
@@ -179,6 +179,7 @@ model Transaction {
   investmentId String?
   investment   Investment? @relation(fields: [investmentId], references: [id])
 
+  earlyWithdrawal Boolean @default(false)
   type   TransactionType
   status TransactionStatus @default(PENDING)
 

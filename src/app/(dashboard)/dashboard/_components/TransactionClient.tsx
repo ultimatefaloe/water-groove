@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { TransactionDto } from "@/types/type";
+import { useCallback, useEffect, useState } from "react";
 import { TransactionFilter, TransactionResponse } from "@/types/type";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,11 +31,12 @@ import { CalendarIcon, Filter, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { TransactionStatus, TransactionType } from "@prisma/client";
 import { DateRange } from "react-day-picker";
-import { TransactionTable } from "./TransactionTable";
-import { TransactionDetailsModal } from "./TransactionDetailsModal";
+import TransactionTable from "@/components/transaction/TransactionTable";
+import TransactionDetailsModal from "@/components/transaction/TransactionDetailsModal";
+import { AdminTransactionRow } from "@/types/adminType";
 
 interface TransactionClientProps {
-  initialTransactions: TransactionDto[];
+  initialTransactions: AdminTransactionRow[];
   total: number;
   page: number;
   limit: number;
@@ -51,7 +51,7 @@ const TransactionClient = ({
   totalPages,
 }: TransactionClientProps) => {
   const [transactions, setTransactions] =
-    useState<TransactionDto[]>(initialTransactions);
+    useState<AdminTransactionRow[]>(initialTransactions);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<TransactionFilter>({
     page: page,
@@ -62,39 +62,50 @@ const TransactionClient = ({
     to: undefined,
   });
   const [selectedTransaction, setSelectedTransaction] =
-    useState<TransactionDto | null>(null);
+    useState<AdminTransactionRow | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const fetchTransactions = async (filterParams: TransactionFilter) => {
-    setLoading(true);
-    try {
-      const queryParams = new URLSearchParams();
-      if (filterParams.type) queryParams.append("type", filterParams.type);
-      if (filterParams.status)
-        queryParams.append("status", filterParams.status);
-      if (filterParams.startDate)
-        queryParams.append("startDate", filterParams.startDate);
-      if (filterParams.endDate)
-        queryParams.append("endDate", filterParams.endDate);
-      if (filterParams.page)
-        queryParams.append("page", filterParams.page.toString());
-      if (filterParams.limit)
-        queryParams.append("limit", filterParams.limit.toString());
+  
+  const fetchTransactions = useCallback(
+    async (filterParams: TransactionFilter) => {
+      setLoading(true);
 
-      const response = await fetch(`/api/transactions?${queryParams}`);
-      const data: TransactionResponse = await response.json();
+      try {
+        const queryParams = new URLSearchParams();
 
-      setTransactions(data.transactions);
-    } catch (error) {
-      console.error("Failed to fetch transactions:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (filterParams.type) queryParams.append("type", filterParams.type);
+        if (filterParams.status)
+          queryParams.append("status", filterParams.status);
+        if (filterParams.startDate)
+          queryParams.append("startDate", filterParams.startDate);
+        if (filterParams.endDate)
+          queryParams.append("endDate", filterParams.endDate);
+        if (filterParams.page)
+          queryParams.append("page", filterParams.page.toString());
+        if (filterParams.limit)
+          queryParams.append("limit", filterParams.limit.toString());
 
-  // useEffect(() => {
-  //   fetchTransactions(filters);
-  // }, [filters.page]);
+        const response = await fetch(`/api/transactions?${queryParams}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch transactions");
+        }
+
+        const data: TransactionResponse = await response.json();
+
+        // ✅ Guard: only update if valid
+        if (Array.isArray(data.transactions)) {
+          setTransactions(data.transactions);
+        }
+        // else → do nothing (preserves previous state)
+      } catch (error) {
+        console.error("Failed to fetch transactions:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [] // ✅ no filters dependency
+  );
 
   const handleFilterChange = () => {
     const updatedFilters: TransactionFilter = {
@@ -114,66 +125,6 @@ const TransactionClient = ({
       to: undefined,
     });
     fetchTransactions({ page: 1, limit });
-  };
-
-  const getStatusBadge = (status: TransactionStatus) => {
-    const statusConfig = {
-      [TransactionStatus.PENDING]: {
-        label: "Pending",
-        className: "bg-amber-100 text-amber-800 hover:bg-amber-100",
-      },
-      [TransactionStatus.APPROVED]: {
-        label: "Approved",
-        className: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100",
-      },
-      [TransactionStatus.REJECTED]: {
-        label: "Rejected",
-        className: "bg-rose-100 text-rose-800 hover:bg-rose-100",
-      },
-      [TransactionStatus.PAID]: {
-        label: "Paid",
-        className: "bg-blue-100 text-blue-800 hover:bg-blue-100",
-      },
-    };
-    const config = statusConfig[status];
-    return (
-      <Badge className={cn("font-medium", config.className)}>
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const getTypeBadge = (type: TransactionType) => {
-    const typeConfig = {
-      [TransactionType.DEPOSIT]: {
-        label: "Deposit",
-        className: "bg-blue-50 text-blue-700 border-blue-200",
-      },
-      [TransactionType.WITHDRAWAL]: {
-        label: "Withdrawal",
-        className: "bg-rose-50 text-rose-700 border-rose-200",
-      },
-      [TransactionType.INTEREST]: {
-        label: "Interest",
-        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      },
-    };
-    const config = typeConfig[type];
-    return (
-      <Badge variant="outline" className={cn("font-medium", config.className)}>
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const getAmountColor = (type: TransactionType) => {
-    return type === TransactionType.WITHDRAWAL
-      ? "text-rose-600"
-      : "text-emerald-600";
-  };
-
-  const getAmountPrefix = (type: TransactionType) => {
-    return type === TransactionType.WITHDRAWAL ? "-" : "+";
   };
 
   console.log(transactions);
@@ -279,7 +230,7 @@ const TransactionClient = ({
           </div>
 
           {/* Date Range Filter */}
-          <div className="space-y-2 col-span-2">
+          <div className="space-y-2 col-span-2 md:col-auto">
             <label className="text-sm font-medium text-wg-primary flex items-center gap-2">
               <CalendarIcon className="h-3.5 w-3.5" />
               Date Range

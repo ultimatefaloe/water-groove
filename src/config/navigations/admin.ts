@@ -3,30 +3,42 @@ import {
   Users,
   ShieldCheck,
   Banknote,
-  Settings,
   FileBarChart,
+  BanknoteArrowDown,
+  BanknoteArrowUp,
+  PiggyBank,
 } from "lucide-react";
 
 
 export const adminNavItems: NavLinks[] = [
   {
-    title: "Dashboard",
+    title: "Overview",
     href: "/admin/dashboard",
     icon: ShieldCheck,
   },
   {
-    title: "Users",
+    title: "Investors",
     href: "/admin/users",
     icon: Users,
   },
   {
+    title: "Investments",
+    href: "/admin/investments",
+    icon: PiggyBank,
+  },
+  {
     title: "Deposits",
     href: "/admin/deposits",
-    icon: Banknote,
+    icon: BanknoteArrowUp,
   },
   {
     title: "Withdrawals",
     href: "/admin/withdrawals",
+    icon: BanknoteArrowDown,
+  },
+   {
+    title: "ROI Return",
+    href: "/admin/rois",
     icon: Banknote,
   },
   {

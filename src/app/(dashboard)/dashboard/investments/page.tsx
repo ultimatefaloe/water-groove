@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { getInvestments } from "@/services/client/r.service";
 import { getServerUserId } from "@/lib/server/auth0-server";
-import InvestmentClient from "../_components/investments/InvestmentClient";
+import InvestmentClient from "../_components/InvestmentClient";
 
 export const metadata: Metadata = {
   title: "Transactions | WG",

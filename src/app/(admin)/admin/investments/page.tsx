@@ -1,45 +1,45 @@
 import { Metadata } from 'next';
 import { getServerAdminId } from '@/lib/server/auth0-server';
-import DepositClient from '../_components/DepositClient';
-import { AdminTransactionQueryParams } from '@/types/adminType';
-import { TransactionStatus, TransactionType } from '@prisma/client';
-import { getTransactions } from '@/services/admin/r.service';
+import { getAllInvestments } from '@/services/admin/r.service';
+import InvestmentClient from '../_components/InvestmentClient';
+import { AdminInvestmentQueryParams } from '@/types/adminType';
+import { InvestmentStatus } from '@prisma/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
-  title: "Deposit Transactions | Water Groove Admin",
-  description: "Manage and monitor all deposit transactions",
+  title: "Investment Management | Water Groove Admin",
+  description: "Manage and monitor all investment portfolios",
 };
 
-const Deposits = async ({
+const Investments = async ({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) => {
   const adminId = await getServerAdminId();
-
-  const searchP = await searchParams
   
   // Parse query parameters
-  const queryParams: AdminTransactionQueryParams = {
-    status: searchP.status as TransactionStatus || undefined,
-    order: (searchP.order as 'asc' | 'desc') || 'desc',
-    date: searchP.date ? new Date(searchP.date as string) : undefined,
-    transactionId: searchP.transactionId as string || undefined,
+  const queryParams: AdminInvestmentQueryParams = {
+    userId: searchParams.userId as string || undefined,
+    categoryId: searchParams.categoryId as string || undefined,
+    status: searchParams.status as InvestmentStatus || undefined,
+    startDate: searchParams.startDate ? new Date(searchParams.startDate as string) : undefined,
+    endDate: searchParams.endDate ? new Date(searchParams.endDate as string) : undefined,
+    order: (searchParams.order as 'asc' | 'desc') || 'desc',
   };
   
-  const page = parseInt(searchP.page as string || '1');
-  const limit = parseInt(searchP.limit as string || '20');
+  const page = parseInt(searchParams.page as string || '1');
+  const limit = parseInt(searchParams.limit as string || '20');
 
   try {
-    const res = await getTransactions(adminId, TransactionType.DEPOSIT,  {
+    const res = await getAllInvestments(adminId, {
       ...queryParams,
       page,
       limit,
-    })
-    
+    });
+
     const data = res?.data ?? {
       data: [],
       total: 0,
@@ -52,7 +52,7 @@ const Deposits = async ({
 
     return (
       <div className="">
-        <DepositClient
+        <InvestmentClient
           initialTransactions={data.data}
           total={data.total}
           page={data.page}
@@ -63,7 +63,7 @@ const Deposits = async ({
       </div>
     );
   } catch (error) {
-    console.error('Error loading deposits:', error);
+    console.error('Error loading investments:', error);
     return (
       <div className="min-h-screen bg-wg-primary flex items-center justify-center p-4">
         <Card className="bg-wg-primary2 border-wg-accent/20 max-w-md">
@@ -72,12 +72,12 @@ const Deposits = async ({
               <AlertCircle className="h-8 w-8 text-red-500" />
             </div>
             <h2 className="text-xl font-semibold text-wg-neutral mb-2">
-              Failed to Load Deposits
+              Failed to Load Investments
             </h2>
             <p className="text-wg-neutral/60 mb-4">
-              There was an error loading deposit transactions. Please try again.
+              There was an error loading investment data. Please try again.
             </p>
-            <Button 
+            <Button
               onClick={() => window.location.reload()}
               className="bg-wg-accent text-white hover:bg-wg-accent/90"
             >
@@ -90,4 +90,4 @@ const Deposits = async ({
   }
 };
 
-export default Deposits;
+export default Investments;

@@ -1,9 +1,17 @@
-import React from 'react'
+import ReportClient from "../_components/ReportClient";
 
-const Reports = () => {
+const Reports = async ({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) => {
+  const searchP = await searchParams;
+  console.log(searchP);
   return (
-    <div>Reports</div>
-  )
-}
+    <div className="">
+      <ReportClient />
+    </div>
+  );
+};
 
-export default Reports
+export default Reports;

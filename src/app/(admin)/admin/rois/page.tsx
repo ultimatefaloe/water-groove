@@ -1,26 +1,26 @@
 import { Metadata } from 'next';
 import { getServerAdminId } from '@/lib/server/auth0-server';
-import DepositClient from '../_components/DepositClient';
 import { AdminTransactionQueryParams } from '@/types/adminType';
 import { TransactionStatus, TransactionType } from '@prisma/client';
 import { getTransactions } from '@/services/admin/r.service';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import RoisClient from '../_components/RoisClient';
 
 export const metadata: Metadata = {
-  title: "Deposit Transactions | Water Groove Admin",
-  description: "Manage and monitor all deposit transactions",
+  title: "ROI Transactions | Water Groove Admin",
+  description: "Manage and monitor all roi transactions",
 };
 
-const Deposits = async ({
+const ROIs = async ({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) => {
   const adminId = await getServerAdminId();
-
   const searchP = await searchParams
+
   
   // Parse query parameters
   const queryParams: AdminTransactionQueryParams = {
@@ -34,7 +34,7 @@ const Deposits = async ({
   const limit = parseInt(searchP.limit as string || '20');
 
   try {
-    const res = await getTransactions(adminId, TransactionType.DEPOSIT,  {
+    const res = await getTransactions(adminId, TransactionType.INTEREST,  {
       ...queryParams,
       page,
       limit,
@@ -52,7 +52,7 @@ const Deposits = async ({
 
     return (
       <div className="">
-        <DepositClient
+        <RoisClient
           initialTransactions={data.data}
           total={data.total}
           page={data.page}
@@ -63,7 +63,7 @@ const Deposits = async ({
       </div>
     );
   } catch (error) {
-    console.error('Error loading deposits:', error);
+    console.error('Error loading rois:', error);
     return (
       <div className="min-h-screen bg-wg-primary flex items-center justify-center p-4">
         <Card className="bg-wg-primary2 border-wg-accent/20 max-w-md">
@@ -72,10 +72,10 @@ const Deposits = async ({
               <AlertCircle className="h-8 w-8 text-red-500" />
             </div>
             <h2 className="text-xl font-semibold text-wg-neutral mb-2">
-              Failed to Load Deposits
+              Failed to Load ROIs
             </h2>
             <p className="text-wg-neutral/60 mb-4">
-              There was an error loading deposit transactions. Please try again.
+              There was an error loading roi transactions. Please try again.
             </p>
             <Button 
               onClick={() => window.location.reload()}
@@ -90,4 +90,4 @@ const Deposits = async ({
   }
 };
 
-export default Deposits;
+export default ROIs;

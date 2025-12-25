@@ -21,11 +21,7 @@ export const ActiveInvestmentsTable = ({
 }: {
   investments: DashboardOverviewData["activeInvestments"];
 }) => (
-  <Card className="lg:col-span-3">
-    <CardHeader>
-      <CardTitle>Active Investments</CardTitle>
-      <CardDescription>Your current investment plans</CardDescription>
-    </CardHeader>
+  <Card>
     <CardContent>
       <Table>
         <TableHeader>

@@ -1,9 +1,9 @@
 import { Metadata } from "next";
-import TransactionClient from "../_components/transaction/TransactionClient";
 import { TransactionQueryParams, TransactionResponse } from "@/types/type";
 import { getTransactions } from "@/services/client/r.service";
 import { getServerUserId } from "@/lib/server/auth0-server";
 import { TransactionStatus, TransactionType } from "@prisma/client";
+import TransactionClient from "../_components/TransactionClient";
 
 export const metadata: Metadata = {
   title: "Transactions | WG",
