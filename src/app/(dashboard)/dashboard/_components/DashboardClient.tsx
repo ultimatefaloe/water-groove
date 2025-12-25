@@ -14,7 +14,6 @@ import {
   DollarSign,
   Wallet,
   BarChart3,
-  FolderOpen,
   Clock,
   ArrowRight,
 } from "lucide-react";
@@ -29,15 +28,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DepositModal } from "../../../../../../prisma/modals/deposit-modal";
-import { WithdrawalModal } from "../../../../../../prisma/modals/withdrawal-modal";
-import { UpgradeTierModal } from "../../../../../../prisma/modals/upgrade-tier-modal";
 import { CategoryDto, DashboardOverviewData } from "@/types/type";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { OverviewItem } from "@/components/ui/overview-Item";
-import { InvestorTier } from "@prisma/client";
-import { ActiveInvestmentsTable } from "./ActiveInvestmentsTable";
-import { PendingTransactionsTable } from "./PendingTransactionsTable";
+import Link from "next/link";
+import { ActiveInvestmentsTable } from "@/components/dashboard/ActiveInvestmentsTable";
+import { PendingTransactionsTable } from "@/components/dashboard/PendingTransactionsTable";
+import { DepositModal } from "@/components/modals/deposit-modal";
+import { WithdrawalModal } from "@/components/modals/withdrawal-modal";
+import { UpgradeTierModal } from "@/components/modals/upgrade-tier-modal";
 
 interface DashboardClientProps {
   data: DashboardOverviewData;
@@ -201,7 +200,7 @@ export default function DashboardClient({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
                 {/* Deposit Button */}
                 <Button
-                  className="h-28 sm:h-32 flex flex-col gap-3 p-4 bg-gradient-to-br from-wg-accent/95 to-wg-accent hover:from-wg-accent hover:to-wg-accent/90 text-wg-neutral transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] border border-wg-accent/20 group/deposit"
+                  className="h-28 sm:h-32 flex flex-col gap-3 p-4 bg-gradient-to-br from-wg-primary/95 to-wg-primary hover:from-wg-primary hover:to-wg-primary/90 text-wg-neutral transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] border border-wg-accent/20 group/deposit"
                   onClick={() => setShowDepositModal(true)}
                 >
                   <div className="relative">
@@ -214,7 +213,8 @@ export default function DashboardClient({
                   <div className="space-y-1">
                     <span className="text-sm font-semibold tracking-wide">
                       Deposit
-                    </span>
+                    </span>{" "}
+                    <br />
                     <span className="text-xs text-wg-neutral/80 group-hover/deposit:text-wg-neutral">
                       Add funds to wallet
                     </span>
@@ -240,7 +240,8 @@ export default function DashboardClient({
                   <div className="space-y-1">
                     <span className="text-sm font-semibold tracking-wide">
                       Withdraw
-                    </span>
+                    </span>{" "}
+                    <br />
                     <span className="text-xs text-wg-primary/70 group-hover/withdraw:text-wg-primary">
                       Withdraw funds
                     </span>
@@ -269,7 +270,8 @@ export default function DashboardClient({
                     <div className="space-y-1">
                       <span className="text-sm font-semibold tracking-wide text-wg-primary/70">
                         Upgrade Tier
-                      </span>
+                      </span>{" "}
+                      <br />
                       <span className="text-xs text-wg-primary/50">
                         Coming soon
                       </span>
@@ -439,12 +441,33 @@ export default function DashboardClient({
 
         {/* Active Investments Table */}
         {activeInvestments.length > 0 && (
-          <ActiveInvestmentsTable investments={activeInvestments} />
+          <Card className="lg:col-span-3 ">
+            <CardHeader>
+              <CardTitle>Active Investments</CardTitle>
+              <CardDescription>Your current investment plans</CardDescription>
+            </CardHeader>
+            <ActiveInvestmentsTable investments={activeInvestments} />
+          </Card>
         )}
 
         {/* Pending Transactions */}
         {pendingTransactions.length > 0 && (
-          <PendingTransactionsTable transactions={pendingTransactions} />
+          <Card className="lg:col-span-3 bg-wg-accent">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Pending Transactions</CardTitle>
+                <CardDescription className="text-white">
+                  Transactions awaiting approval
+                </CardDescription>
+              </div>
+              <Link href="/dashboard/transactions">
+                <Button variant="default" size="sm" className="bg-wg-primary text-white hover:bg-wg-primary/50">
+                  View All
+                </Button>
+              </Link>
+            </CardHeader>
+            <PendingTransactionsTable transactions={pendingTransactions} />
+          </Card>
         )}
       </div>
 

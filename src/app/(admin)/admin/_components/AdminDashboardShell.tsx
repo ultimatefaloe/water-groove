@@ -51,7 +51,7 @@ export default function AdminDashboardShell({ children }: Props) {
             <Menu className="h-5 w-5" />
           </Button>
 
-          <h1 className="ml-3 text-lg font-semibold">{pageTitle} | Admin</h1>
+          <h1 className="ml-3 text-lg font-semibold">Admim | {pageTitle}</h1>
 
           <div className="ml-auto flex items-center gap-2">
             <Button variant="ghost" size="icon">

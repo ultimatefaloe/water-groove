@@ -42,18 +42,8 @@ export const PendingTransactionsTable = ({
 }: {
   transactions: DashboardOverviewData["pendingTransactions"];
 }) => (
-  <Card className="lg:col-span-3">
-    <CardHeader className="flex flex-row items-center justify-between">
-      <div>
-        <CardTitle>Pending Transactions</CardTitle>
-        <CardDescription>Transactions awaiting approval</CardDescription>
-      </div>
-      <Link href="/dashboard/transactions">
-        <Button variant="outline" size="sm">
-          View All
-        </Button>
-      </Link>
-    </CardHeader>
+  <Card>
+   
     <CardContent>
       <Table>
         <TableHeader>
@@ -103,7 +93,7 @@ export const PendingTransactionsTable = ({
         </TableBody>
       </Table>
     </CardContent>
-    <CardFooter className="flex-col items-start gap-2">
+    <CardFooter className="flex-col items-start gap-2 pb-5">
       <div className="flex items-center justify-between w-full">
         <div className="text-sm text-muted-foreground">
           Showing {transactions.length} pending transactions

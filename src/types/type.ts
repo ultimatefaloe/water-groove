@@ -1,5 +1,6 @@
 
 import { InvestorTier, TransactionStatus, TransactionType, AdminRole, InvestmentStatus } from "@prisma/client"
+import { AdminTransactionRow } from "./adminType"
 
 export enum InvestmentStatusDto {
   PENDING_PAYMENT = "PENDING_PAYMENT",
@@ -198,6 +199,7 @@ export interface WithdrawalRequestDto {
   accountHolderName: string
   amount: number
   reference?: string
+  earlyWithdrawal?: boolean
 }
 
 export interface CategoryDto {
@@ -225,7 +227,7 @@ export interface TransactionFilter {
 }
 
 export interface TransactionResponse {
-  transactions: TransactionDto[]
+  transactions: AdminTransactionRow[]
   total: number // Total number of transactions matching filter (without pagination)
   page: number // Current page number
   limit: number // Number of items per page
@@ -318,6 +320,36 @@ export interface TransactionSummary {
   }
   statusBreakdown: Record<TransactionStatus, number>
 }
+
+export interface InvestorBalanceDto {
+  id: string
+  principalLocked: number
+  roiAccrued: number
+  totalDeposited: number
+  totalWithdrawn: number
+  availableBalance: number
+  lastComputedAt: Date
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface InvestmenCrontDto {
+  id: string
+  userId: string
+  processedByAdminId: string
+  categoryId: string
+  principalAmount: number
+  roiRateSnapshot: number
+  roiAmount: number
+  durationMonths: number
+  status: InvestmentStatus
+  startDate?: string
+  endDate?: string
+  createdAt: string
+  investorBalance: InvestorBalanceDto
+}
+
+
 
 // `REF-WG-${Date.now()}`
 // const isLocked =

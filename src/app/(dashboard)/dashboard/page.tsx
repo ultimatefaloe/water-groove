@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { DashboardSkeleton } from "./_components/dashboard/DashboardSkeleton";
-import DashboardClient from "./_components/dashboard/DashboardClient";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import DashboardClient from "./_components/DashboardClient";
 import { Metadata } from "next";
 import {
   getAllInvestmentCategory,
@@ -81,23 +81,25 @@ export default async function DashboardPage() {
           </h2>
 
           <p className="mt-2 text-sm text-muted-foreground">
-            Something went wrong while loading your dashboard. Please try again,
-            or contact support if the problem persists.
+            {error.message ||
+              `Something went wrong while loading your dashboard. Please try again,
+            or contact support if the problem persists.`}
           </p>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <button
-              onClick={() => window.location.reload()}
+            <a
+              href="#"
+              // onClick={() => window.location.reload()}
               className="rounded-lg bg-wg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-wg-accent/90 focus:outline-none focus:ring-2 focus:ring-wg-accent/50"
             >
               Retry
-            </button>
+            </a>
 
             <a
               href="/support"
               className="rounded-lg border border-wg-accent/40 px-4 py-2 text-sm font-medium text-wg-accent transition hover:bg-wg-accent/10 focus:outline-none focus:ring-2 focus:ring-wg-accent/50"
             >
-              Contact Support
+              onClick Contact Support
             </a>
           </div>
         </div>

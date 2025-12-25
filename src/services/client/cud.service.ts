@@ -75,30 +75,38 @@ export async function createDepositService({
 
   try {
     await prisma.$transaction(async (tx) => {
-      const innst = await tx.investment.create({
+      const ivst = await tx.investment.create({
         data: {
           userId,
           categoryId: data ? data?.id : '',
           principalAmount: amount,
-          roiRateSnapshot: data?.monthlyRoiRate ??  2,
+          roiRateSnapshot: data?.monthlyRoiRate ?? 2,
           durationMonths: data?.durationMonths ?? 18,
         }
       })
-  
+
       await tx.transaction.create({
         data: {
           userId,
-          investmentId: innst?.id,
+          investmentId: ivst?.id,
           type: TransactionType.DEPOSIT,
           status: TransactionStatus.PENDING,
           amount,
           description,
         }
       })
+
+      await tx.investorBalance.create({
+        data: {
+          investmentId: ivst.id,
+          principalLocked: amount,
+          createdAt: new Date(),
+        },
+      })
     })
-    
+
     const bds = await getPlatformBankDetails()
-  
+
     return {
       success: true,
       message: "Transaction created successfully, upload proof of payment",
@@ -167,6 +175,7 @@ export async function withdrawalRequestService({
   accountNumber,
   accountHolderName,
   amount,
+  earlyWithdrawal
 }: WithdrawalRequestDto): Promise<ApiResponse<WithdrawalRequestDto | null>> {
 
   const userId = await getServerUserId()
@@ -187,8 +196,14 @@ export async function withdrawalRequestService({
       where: { investmentId: inst?.id },
     })
 
-    if (+amount > Number(balance?.availableBalance) + Number(balance?.principalLocked)) {
-      throw new Error("Insufficient balance")
+    if (earlyWithdrawal) {
+      if (+amount > Number(balance?.availableBalance) + Number(balance?.principalLocked)) {
+        throw new Error("Insufficient balance")
+      }
+    } else {
+      if (+amount > Number(balance?.availableBalance)) {
+        throw new Error("Insufficient balance")
+      }
     }
 
     const txn = await prisma.transaction.create({
@@ -198,6 +213,7 @@ export async function withdrawalRequestService({
         type: TransactionType.WITHDRAWAL,
         amount: +amount,
         status: TransactionStatus.PENDING,
+        earlyWithdrawal: earlyWithdrawal ? true : false
       },
     })
 
