@@ -36,7 +36,7 @@ export default async function DashboardPage() {
     return (
       <Suspense
         fallback={
-          <div className="min-h-screen bg-wg-primary flex items-center justify-center">
+          <div className="min-h-screen bg-wg-neutral flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-wg-accent"></div>
           </div>
         }
@@ -47,7 +47,7 @@ export default async function DashboardPage() {
   } catch (error: any) {
     console.log("Error loading dashboard:", error.message);
     return (
-      <div className="flex min-h-screen items-center justify-center bg-wg-primary px-4">
+      <div className="flex min-h-screen items-center justify-center bg-wg-neutral px-4">
         <div
           role="alert"
           className="w-full max-w-md rounded-2xl border border-wg-accent/30 bg-wg-secondary/40 p-6 text-center shadow-lg"
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
             Dashboard failed to load
           </h2>
 
-          <p className="mt-2 text-sm text-wg-neutral/60">
+          <p className="mt-2 text-sm text-wg-primary/60">
             {error.message ||
               `Something went wrong while loading your dashboard. Please try again,
             or contact support if the problem persists.`}
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <button
-              onClick={() => window.location.reload()}
+              // onClick={() => window.location.reload()}
               className="rounded-lg bg-wg-accent px-4 py-2 text-sm font-medium text-white transition hover:bg-wg-accent/90 focus:outline-none focus:ring-2 focus:ring-wg-accent/50"
             >
               Retry
