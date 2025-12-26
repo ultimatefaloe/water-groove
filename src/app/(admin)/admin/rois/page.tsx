@@ -65,20 +65,20 @@ const ROIs = async ({
   } catch (error) {
     console.error('Error loading rois:', error);
     return (
-      <div className="min-h-screen bg-wg-primary flex items-center justify-center p-4">
-        <Card className="bg-wg-primary2 border-wg-accent/20 max-w-md">
+      <div className="min-h-screen bg-wg-neutral flex items-center justify-center p-4">
+        <Card className="bg-wg-neutral2 border-wg-accent/20 max-w-md">
           <CardContent className="p-6 text-center">
             <div className="mb-4 rounded-full bg-red-500/10 p-4 inline-block">
               <AlertCircle className="h-8 w-8 text-red-500" />
             </div>
-            <h2 className="text-xl font-semibold text-wg-neutral mb-2">
+            <h2 className="text-xl font-semibold text-wg-primary mb-2">
               Failed to Load ROIs
             </h2>
-            <p className="text-wg-neutral/60 mb-4">
+            <p className="text-wg-primary/60 mb-4">
               There was an error loading roi transactions. Please try again.
             </p>
             <Button 
-              onClick={() => window.location.reload()}
+              // onClick={() => window.location.reload()}
               className="bg-wg-accent text-white hover:bg-wg-accent/90"
             >
               Retry
