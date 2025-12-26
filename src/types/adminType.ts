@@ -44,7 +44,7 @@ export interface AdminDashboardOverview {
 }
 
 export interface AdminUserRow {
- id: string
+  id: string
   fullName: string
   email: string
   phone?: string
@@ -170,6 +170,9 @@ export interface AdminTransactionQueryParams {
   order?: Prisma.SortOrder
   date?: Date;
   transactionId?: string
+  page?: number
+  limit?: number
+  type?: TransactionType
 }
 
 export interface AdminInvestmentQueryParams {
@@ -179,6 +182,8 @@ export interface AdminInvestmentQueryParams {
   startDate?: Date
   endDate?: Date
   order?: Prisma.SortOrder
+  page?: number
+  limit?: number
 }
 
 export interface AdminUserQueryParams {
@@ -186,4 +191,6 @@ export interface AdminUserQueryParams {
   email?: string
   isActive?: boolean
   investmentCategoryId?: string
+  page?: number
+  limit?: number
 }

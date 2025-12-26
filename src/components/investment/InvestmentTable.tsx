@@ -20,6 +20,7 @@ import {
 import { MoreVertical, Eye, Clock, PlayCircle, PauseCircle, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { AdminInvestmentRow } from "@/types/adminType";
 import { InvestmentStatus } from '@prisma/client';
+import { formatCurrency, formatDate } from '@/lib/utils';
 
 interface InvestmentTableProps {
   investments: AdminInvestmentRow[];
@@ -82,26 +83,6 @@ const InvestmentTable: React.FC<InvestmentTableProps> = ({
           icon: AlertCircle
         };
     }
-  };
-
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
-
-  // Format date
-  const formatDate = (date?: Date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
   };
 
   // Calculate ROI

@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma"
-import { TransactionStatus, TransactionType } from "@prisma/client"
+import { Prisma, TransactionStatus, TransactionType } from "@prisma/client"
 import { AdminDashboardOverview, AdminUserQueryParams, AdminUserRow, AdminInvestmentQueryParams, AdminInvestmentRow, AdminTransactionQueryParams, AdminTransactionRow, PaginatedResponse } from "@/types/adminType"
 import { ApiResponse } from "@/types/type"
 import { buildDateFilter, buildOrder, buildPaginationMeta, paginate } from "@/lib/utils"
@@ -10,59 +10,58 @@ async function authorizeAdmin(adminId: string) {
   const authAdmin = await getServerAdminId()
   if (authAdmin !== adminId) throw new Error("Unauthorized")
 }
-
 export async function getTransactions(
   adminId: string,
   type: TransactionType,
   params: AdminTransactionQueryParams & { page?: number; limit?: number }
-): Promise<ApiResponse<PaginatedResponse<AdminTransactionRow[]>>> {
-  try {
-    await authorizeAdmin(adminId)
+) {
+  console.log(adminId)
+  await authorizeAdmin(adminId)
 
-    const page = params.page ?? 1
-    const limit = params.limit ?? 20
+  let page = params.page ?? 1
+  let limit = params.limit ?? 20
 
-    const where = {
-      type,
-      status: params.status,
-      id: params.transactionId,
-      createdAt: buildDateFilter(params.date)
-    }
+  const where: AdminTransactionQueryParams = {
+    type,
+    ...(params.status && { status: params.status }),
+    ...(params.transactionId && { id: params.transactionId }),
+    ...(params.date && { createdAt: buildDateFilter(params.date) }),
+  }
 
-    const [total, transactions] = await prisma.$transaction([
-      prisma.transaction.count({ where }),
-      prisma.transaction.findMany({
-        where,
-        orderBy: buildOrder(params.order),
-        skip: (page - 1) * limit,
-        take: limit,
-        select: {
-          id: true,
-          userId: true,
-          investmentId: true,
-          type: true,
-          status: true,
-          amount: true,
-          proofUrl: true,
-          description: true,
-          processedAt: true,
-          createdAt: true
-        }
-      })
-    ])
-
-    return {
-      success: true,
-      data: {
-        data: transactions.map(mapTransactionToAdminRow),
-        ...buildPaginationMeta(total, page, limit)
+  const [total, transactions] = await prisma.$transaction([
+    prisma.transaction.count({ where }),
+    prisma.transaction.findMany({
+      where,
+      orderBy: buildOrder(params.order),
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        userId: true,
+        investmentId: true,
+        type: true,
+        status: true,
+        amount: true,
+        proofUrl: true,
+        description: true,
+        processedAt: true,
+        createdAt: true
       }
+    })
+  ])
+  console.log(transactions)
+  const txns = transactions.map(mapTransactionToAdminRow)
+  console.log(txns)
+
+  return {
+    success: true,
+    data: {
+      data: txns,
+      ...buildPaginationMeta(total, page, limit)
     }
-  } catch (error: any) {
-    console.error(error)
-    return { success: false, message: error.message }
   }
 }
+
 
 
 export async function getAllInvestments(
@@ -76,9 +75,9 @@ export async function getAllInvestments(
     const limit = params.limit ?? 20
 
     const where = {
-      userId: params.userId,
-      categoryId: params.categoryId,
-      status: params.status,
+      ...(params.userId && { userId: params.userId }),
+      ...(params.categoryId && { categoryId: params.categoryId }),
+      ...(params.status && { status: params.status }),
       startDate: params.startDate ? { gte: params.startDate } : undefined,
       endDate: params.endDate ? { lte: params.endDate } : undefined
     }
@@ -121,7 +120,7 @@ export async function getAllInvestments(
 
 export async function getAllUsers(
   adminId: string,
-  params: AdminUserQueryParams & { page?: number; limit?: number }
+  params: AdminUserQueryParams
 ): Promise<ApiResponse<PaginatedResponse<AdminUserRow[]>>> {
   try {
     await authorizeAdmin(adminId)
@@ -129,26 +128,26 @@ export async function getAllUsers(
     const page = params.page ?? 1
     const limit = params.limit ?? 20
 
-    const [total, users] = await prisma.$transaction([
-      prisma.user.count({
-        where: {
-          fullName: params.fullName
-            ? { contains: params.fullName, mode: "insensitive" }
-            : undefined,
-          email: params.email,
-          isActive: params.isActive,
-          investmentCategoryId: params.investmentCategoryId
-        }
+    const where: Prisma.UserWhereInput = {
+      ...(params.fullName && {
+        fullName: { contains: params.fullName, mode: "insensitive" },
       }),
+      ...(params.email && {
+        email: { contains: params.email, mode: "insensitive" },
+      }),
+      ...(params.isActive !== undefined && params.isActive !== null && {
+        isActive: params.isActive,
+      }),
+      ...(params.investmentCategoryId && {
+        investmentCategoryId: params.investmentCategoryId,
+      }),
+    }
+
+
+    const [total, users] = await prisma.$transaction([
+      prisma.user.count({ where }),
       prisma.user.findMany({
-        where: {
-          fullName: params.fullName
-            ? { contains: params.fullName, mode: "insensitive" }
-            : undefined,
-          email: params.email,
-          isActive: params.isActive,
-          investmentCategoryId: params.investmentCategoryId
-        },
+        where,
         skip: (page - 1) * limit,
         take: limit,
         select: {
@@ -175,6 +174,7 @@ export async function getAllUsers(
     return { success: false, message: error.message }
   }
 }
+
 
 
 export async function getAdminDashboardOverview(

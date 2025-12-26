@@ -9,16 +9,14 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
-    const userId = await getServerUserId()
     const { searchParams } = new URL(req.url);
+    const userId = await getServerUserId()
 
     const query: TransactionQueryParams = {
-      type: (searchParams.get("type") as TransactionType) ?? undefined,
+      type: (searchParams.get("type")?.toUpperCase() as TransactionType) ?? undefined,
       status: (searchParams.get("status") as TransactionStatus) ?? undefined,
-      from: searchParams.get("from") ?? undefined,
-      to: searchParams.get("to") ?? undefined,
-      page: searchParams.get("page") ?? undefined,
-      limit: searchParams.get("limit") ?? undefined,
+      page: Number(searchParams.get("page")) ?? undefined,
+      limit: Number(searchParams.get("limit")) ?? undefined,
       sortBy: searchParams.get("sortBy") as any,
       sortOrder: searchParams.get("sortOrder") as any,
     };

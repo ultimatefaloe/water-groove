@@ -53,7 +53,7 @@ const Investments = async ({
     return (
       <div className="">
         <InvestmentClient
-          initialTransactions={data.data}
+          initialInvestments={data.data}
           total={data.total}
           page={data.page}
           limit={data.limit}
