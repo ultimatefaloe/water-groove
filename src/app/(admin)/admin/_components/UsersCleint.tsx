@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { 
   Card, 
@@ -39,6 +39,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { StatsCard } from "@/components/ui/StatsCard";
 import { Search, Filter, MoreVertical, Eye, UserX, UserCheck, Calendar } from "lucide-react";
 import { AdminUserRow, AdminUserQueryParams, PaginatedResponse } from "@/types/adminType";
+import { ApiResponse } from "@/types/type";
 
 interface UsersClientProps {
   initialData: PaginatedResponse<AdminUserRow[]>;
@@ -68,80 +69,140 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const [data, setData] = useState(initialData);
+  const [data, setData] = useState<PaginatedResponse<AdminUserRow[]>>(initialData);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState<AdminUserQueryParams>({
-    fullName: searchParams.get('fullName') || '',
-    email: searchParams.get('email') || '',
-    isActive: searchParams.get('isActive') ? searchParams.get('isActive') === 'true' : undefined,
-    investmentCategoryId: searchParams.get('investmentCategoryId') || '',
-  });
-  const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'));
-  const [limit, setLimit] = useState(parseInt(searchParams.get('limit') || '20'));
+  const [currentPage, setCurrentPage] = useState(initialData.page);
+  const [currentLimit, setCurrentLimit] = useState(initialData.limit);
+  const [currentTotal, setCurrentTotal] = useState(initialData.total);
+  const [currentTotalPages, setCurrentTotalPages] = useState(initialData.totalPages);
 
-  // Update URL with filters and pagination
-  const updateURL = useCallback((newFilters: AdminUserQueryParams, newPage: number, newLimit: number) => {
+  // Initialize filters from URL params
+  const [filters, setFilters] = useState<AdminUserQueryParams>(() => {
+    const params: AdminUserQueryParams = {
+      page: initialData.page,
+      limit: initialData.limit,
+    };
+
+    const fullName = searchParams.get('fullName');
+    const email = searchParams.get('email');
+    const isActive = searchParams.get('isActive');
+    const investmentCategoryId = searchParams.get('investmentCategoryId');
+
+    if (fullName) {
+      params.fullName = fullName;
+    }
+    if (email) {
+      params.email = email;
+    }
+    if (isActive) {
+      params.isActive = isActive === 'true';
+    }
+    if (investmentCategoryId && investmentCategoryId !== 'all') {
+      params.investmentCategoryId = investmentCategoryId;
+    }
+
+    return params;
+  });
+
+  // Build query string from filters
+  const buildQueryString = useCallback((filterParams: AdminUserQueryParams) => {
     const params = new URLSearchParams();
     
-    if (newFilters.fullName) params.set('fullName', newFilters.fullName);
-    if (newFilters.email) params.set('email', newFilters.email);
-    if (newFilters.isActive !== undefined) params.set('isActive', newFilters.isActive.toString());
-    if (newFilters.investmentCategoryId) params.set('investmentCategoryId', newFilters.investmentCategoryId);
+    // Always include page and limit
+    params.set("page", (filterParams.page || 1).toString());
+    params.set("limit", (filterParams.limit || 20).toString());
     
-    params.set('page', newPage.toString());
-    params.set('limit', newLimit.toString());
+    // Add optional filters
+    if (filterParams.fullName) {
+      params.set("fullName", filterParams.fullName);
+    }
+    if (filterParams.email) {
+      params.set("email", filterParams.email);
+    }
+    if (filterParams.isActive !== undefined) {
+      params.set("isActive", filterParams.isActive.toString());
+    }
+    if (filterParams.investmentCategoryId) {
+      params.set("investmentCategoryId", filterParams.investmentCategoryId);
+    }
     
-    router.push(`/admin/users?${params.toString()}`);
-  }, [router]);
+    return params.toString();
+  }, []);
+
+  // Update URL with filters
+  const updateURL = useCallback((filterParams: AdminUserQueryParams) => {
+    const queryString = buildQueryString(filterParams);
+    router.push(`/admin/users?${queryString}`);
+  }, [router, buildQueryString]);
 
   // Fetch users with filters
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      // In a real app, this would be an API call
-      // For now, we'll simulate with the initial data
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const queryString = buildQueryString(filters);
+      const res = await fetch(`/api/admin/users?${queryString}`);
       
-      // Filter the initial data based on current filters
-      const filteredData = {
-        ...initialData,
-        data: initialData.data.filter(user => {
-          if (filters.fullName && !user.fullName.toLowerCase().includes(filters.fullName.toLowerCase())) {
-            return false;
-          }
-          if (filters.email && !user.email.toLowerCase().includes(filters.email.toLowerCase())) {
-            return false;
-          }
-          if (filters.isActive !== undefined && user.isActive !== filters.isActive) {
-            return false;
-          }
-          if (filters.investmentCategoryId && user.investmentCategoryId !== filters.investmentCategoryId) {
-            return false;
-          }
-          return true;
-        }),
-      };
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
       
-      setData(filteredData);
+      const result: ApiResponse<PaginatedResponse<AdminUserRow[]>> = await res.json();
+
+      if (result.success && result.data) {
+        setData(result.data);
+        setCurrentPage(result.data.page);
+        setCurrentLimit(result.data.limit);
+        setCurrentTotal(result.data.total);
+        setCurrentTotalPages(result.data.totalPages);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
     }
-  }, [filters, initialData]);
+  }, [filters, buildQueryString]);
 
+  // Initial fetch on mount if URL params differ from initial props
   useEffect(() => {
-    fetchUsers();
-    updateURL(filters, page, limit);
-  }, [filters, page, limit, updateURL]);
+    const hasFilterParams = searchParams.get("fullName") || 
+                           searchParams.get("email") || 
+                           searchParams.get("isActive") || 
+                           searchParams.get("investmentCategoryId");
+    
+    if (hasFilterParams) {
+      fetchUsers();
+    }
+  }, []); // Empty dependency array for initial mount only
+
+  // Fetch when filters change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchUsers();
+      updateURL(filters);
+    }, 300); // Debounce API calls
+
+    return () => clearTimeout(timer);
+  }, [filters, fetchUsers, updateURL]);
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const activeUsers = data.data.filter(user => user.isActive).length;
+    const inactiveUsers = data.data.filter(user => !user.isActive).length;
+
+    return {
+      totalUsers: currentTotal,
+      activeUsers,
+      inactiveUsers,
+    };
+  }, [data.data, currentTotal]);
 
   // Handle filter changes
   const handleFilterChange = (key: keyof AdminUserQueryParams, value: any) => {
     setFilters(prev => ({
       ...prev,
-      [key]: value,
+      [key]: value === "" || value === "all" ? undefined : value,
+      page: 1, // Reset to first page when filters change
     }));
-    setPage(1); // Reset to first page when filters change
   };
 
   // Handle search
@@ -151,13 +212,11 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
 
   // Handle clear filters
   const handleClearFilters = () => {
-    setFilters({});
-    setPage(1);
+    setFilters({
+      page: 1,
+      limit: currentLimit,
+    });
   };
-
-  // Calculate stats
-  const activeUsers = data.data.filter(user => user.isActive).length;
-  const inactiveUsers = data.data.filter(user => !user.isActive).length;
 
   // Format date
   const formatDate = (date: Date) => {
@@ -168,10 +227,36 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
     });
   };
 
+  const handlePageChange = (newPage: number) => {
+    setFilters(prev => ({
+      ...prev,
+      page: newPage,
+    }));
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setFilters(prev => ({
+      ...prev,
+      limit: newLimit,
+      page: 1,
+    }));
+    setCurrentLimit(newLimit);
+  };
+
   const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
-      // In a real app, this would be an API call
-      console.log(`Toggling user ${userId} status to ${!currentStatus}`);
+      const res = await fetch(`/api/admin/users/${userId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isActive: !currentStatus }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update user status');
+      }
+
       // Update local state
       setData(prev => ({
         ...prev,
@@ -179,8 +264,12 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
           user.id === userId ? { ...user, isActive: !currentStatus } : user
         ),
       }));
+
+      // Refresh stats
+      fetchUsers();
     } catch (error) {
       console.error('Error toggling user status:', error);
+      alert('Failed to update user status');
     }
   };
 
@@ -190,19 +279,19 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatsCard
           title="Total Users"
-          value={totalUsers.toString()}
+          value={stats.totalUsers.toString()}
           description="All registered users"
           icon={StatsIcons.users}
         />
         <StatsCard
           title="Active Users"
-          value={activeUsers.toString()}
+          value={stats.activeUsers.toString()}
           description="Currently active users"
           icon={StatsIcons.active}
         />
         <StatsCard
           title="Inactive Users"
-          value={inactiveUsers.toString()}
+          value={stats.inactiveUsers.toString()}
           description="Suspended or disabled users"
           icon={StatsIcons.inactive}
         />
@@ -259,9 +348,9 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
                 Status
               </label>
               <Select
-                value={filters.isActive?.toString() || ''}
+                value={filters.isActive?.toString() || 'all'}
                 onValueChange={(value) => 
-                  handleFilterChange('isActive', value === '' ? undefined : value === 'true')
+                  handleFilterChange('isActive', value === 'all' ? undefined : value === 'true')
                 }
               >
                 <SelectTrigger className="bg-wg-neutral border-wg-accent/20 text-wg-primary">
@@ -281,7 +370,7 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
                 Investment Category
               </label>
               <Select
-                value={filters.investmentCategoryId || ''}
+                value={filters.investmentCategoryId || 'all'}
                 onValueChange={(value) => handleFilterChange('investmentCategoryId', value)}
               >
                 <SelectTrigger className="bg-wg-neutral border-wg-accent/20 text-wg-primary">
@@ -300,7 +389,8 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
           {/* Filter Actions */}
           <div className="flex justify-between items-center mt-6">
             <div className="text-sm text-wg-primary/60">
-              Showing {data.data.length} of {data.total} users
+              Showing {((filters.page || 1) - 1) * currentLimit + 1} to{" "}
+              {Math.min((filters.page || 1) * currentLimit, currentTotal)} of {currentTotal} users
             </div>
             <div className="flex gap-2">
               <Button
@@ -409,6 +499,14 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
                               align="end" 
                               className="bg-wg-neutral border-wg-accent/20"
                             >
+                              <DropdownMenuItem 
+                                onClick={() => router.push(`/admin/users/${user.id}`)}
+                                className="text-wg-primary hover:bg-wg-accent/20 cursor-pointer"
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-wg-accent/20" />
                               {user.isActive ? (
                                 <DropdownMenuItem 
                                   onClick={() => handleToggleUserStatus(user.id, user.isActive)}
@@ -436,7 +534,7 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
               </div>
 
               {/* Pagination */}
-              {data.totalPages > 1 && (
+              {currentTotalPages > 1 && (
                 <div className="mt-6">
                   <Pagination>
                     <PaginationContent>
@@ -445,26 +543,28 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
                           href="#"
                           onClick={(e) => {
                             e.preventDefault();
-                            if (page > 1) setPage(page - 1);
+                            if (filters.page && filters.page > 1) {
+                              handlePageChange(filters.page - 1);
+                            }
                           }}
                           className={
-                            !data.hasPreviousPage
+                            (filters.page || 1) <= 1
                               ? "pointer-events-none opacity-50"
                               : "hover:bg-wg-accent/20"
                           }
                         />
                       </PaginationItem>
                       
-                      {Array.from({ length: Math.min(5, data.totalPages) }, (_, i) => {
+                      {Array.from({ length: Math.min(5, currentTotalPages) }, (_, i) => {
                         let pageNum;
-                        if (data.totalPages <= 5) {
+                        if (currentTotalPages <= 5) {
                           pageNum = i + 1;
-                        } else if (page <= 3) {
+                        } else if ((filters.page || 1) <= 3) {
                           pageNum = i + 1;
-                        } else if (page >= data.totalPages - 2) {
-                          pageNum = data.totalPages - 4 + i;
+                        } else if ((filters.page || 1) >= currentTotalPages - 2) {
+                          pageNum = currentTotalPages - 4 + i;
                         } else {
-                          pageNum = page - 2 + i;
+                          pageNum = (filters.page || 1) - 2 + i;
                         }
                         
                         return (
@@ -473,11 +573,11 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
                               href="#"
                               onClick={(e) => {
                                 e.preventDefault();
-                                setPage(pageNum);
+                                handlePageChange(pageNum);
                               }}
-                              isActive={pageNum === page}
+                              isActive={pageNum === (filters.page || 1)}
                               className={
-                                pageNum === page
+                                pageNum === (filters.page || 1)
                                   ? "bg-wg-accent text-white hover:bg-wg-accent/90"
                                   : "hover:bg-wg-accent/20"
                               }
@@ -493,10 +593,12 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
                           href="#"
                           onClick={(e) => {
                             e.preventDefault();
-                            if (page < data.totalPages) setPage(page + 1);
+                            if (filters.page && filters.page < currentTotalPages) {
+                              handlePageChange(filters.page + 1);
+                            }
                           }}
                           className={
-                            !data.hasNextPage
+                            (filters.page || 1) >= currentTotalPages
                               ? "pointer-events-none opacity-50"
                               : "hover:bg-wg-accent/20"
                           }
@@ -509,12 +611,12 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
                   <div className="flex items-center justify-center gap-2 mt-4 text-sm text-wg-primary/60">
                     <span>Show</span>
                     <Select
-                      value={limit.toString()}
-                      onValueChange={(value) => setLimit(parseInt(value))}
+                      value={currentLimit.toString()}
+                      onValueChange={(value) => handleLimitChange(parseInt(value))}
                     >
                       <SelectTrigger className="w-20 h-8 bg-wg-neutral border-wg-accent/20 text-wg-primary">
                         <SelectValue />
-                      </SelectTrigger>``
+                      </SelectTrigger>
                       <SelectContent className="bg-wg-neutral border-wg-accent/20">
                         <SelectItem value="10">10</SelectItem>
                         <SelectItem value="20">20</SelectItem>

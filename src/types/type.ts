@@ -269,8 +269,8 @@ export interface TransactionQueryParams {
   status?: TransactionStatus
   from?: string
   to?: string
-  page?: string
-  limit?: string
+  page?: number
+  limit?: number
   sortBy?: 'date' | 'amount' | 'type' // Optional sorting
   sortOrder?: 'asc' | 'desc' // Optional sort order
 }
