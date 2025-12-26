@@ -52,8 +52,8 @@ const CTASection = () => {
                 Start Investing Today <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Link href="/investment-packages">
-              <Button size="lg" variant="outline" className="border-wg-neutral text-wg-neutral hover:bg-wg-neutral/10 px-8 py-6 text-base rounded-xl hover:scale-105 transition-all duration-300">
+            <Link href="/investment-sectors">
+              <Button size="lg" variant="outline" className="border  bg-wg-primary text-wg-neutral hover:bg-wg-neutral/10 px-8 py-6 text-base rounded-xl hover:scale-105 transition-all duration-300">
                 View Packages
               </Button>
             </Link>

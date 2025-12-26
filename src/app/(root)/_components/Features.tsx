@@ -60,13 +60,13 @@ const Features: React.FC<FeaturesProps> = ({ features }) => {
               ))}
             </div>
             
-            <div className="mt-10">
+            {/* <div className="mt-10">
               <Link href="/risk-management">
                 <Button className="bg-wg-primary hover:bg-wg-primary/90 text-wg-neutral px-8 py-6 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
                   Our Risk Management Strategy
                 </Button>
               </Link>
-            </div>
+            </div> */}
           </div>
           
           <div className="space-y-8">

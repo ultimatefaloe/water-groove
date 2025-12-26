@@ -74,12 +74,9 @@ const Navbar = () => {
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-3">
               <div className="flex h-20 w-20 items-center justify-center">
-                <Image 
+                <img 
                   src="/logo_t.png" 
-                  alt="Water Grove Logo" 
-                  width={32} 
-                  height={32} 
-                  className="h-20 w-20"
+                  alt="water Groove Logo "
                 />
               </div>
               <span className="text-lg font-bold text-wg-primary">
