@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -34,7 +35,6 @@ const Navbar = () => {
 
   // Close mobile menu when route changes
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
@@ -72,7 +72,7 @@ const Navbar = () => {
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-3">
               <div className="flex h-20 w-20 items-center justify-center">
-                <Image 
+                <img 
                   src="/logo_t.png" 
                   alt="Water Grove Logo" 
                   width={100} 
@@ -270,8 +270,6 @@ const Navbar = () => {
                       )}
                     </div>
                   </div>
-
-                 
                 </div>
               </SheetContent>
             </Sheet>
