@@ -59,6 +59,7 @@ const Deposits = async ({
           limit={data.limit}
           totalPages={data.totalPages}
           isAdmin={true}
+          adminId={adminId}
         />
       </div>
     );

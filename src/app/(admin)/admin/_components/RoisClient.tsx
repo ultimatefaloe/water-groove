@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Card,
@@ -43,6 +43,7 @@ import { TransactionStatus } from "@prisma/client";
 import TransactionTable from "@/components/transaction/TransactionTable";
 import TransactionDetailsModal from "@/components/transaction/TransactionDetailsModal";
 import { formatCurrency } from "@/lib/utils";
+import { ApiResponse } from "@/types/type";
 
 interface RoisClientProps {
   initialTransactions: AdminTransactionRow[];
@@ -62,141 +63,187 @@ const StatsIcons = {
 
 const RoisClient: React.FC<RoisClientProps> = ({
   initialTransactions,
-  total,
+  total: initialTotal,
   page: initialPage,
   limit: initialLimit,
-  totalPages,
+  totalPages: initialTotalPages,
   isAdmin,
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [transactions, setTransactions] = useState(initialTransactions);
+  const [transactions, setTransactions] = useState<AdminTransactionRow[]>(initialTransactions);
   const [loading, setLoading] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] =
-    useState<AdminTransactionRow | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<AdminTransactionRow | null>(null);
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [currentLimit, setCurrentLimit] = useState(initialLimit);
+  const [currentTotal, setCurrentTotal] = useState(initialTotal);
+  const [currentTotalPages, setCurrentTotalPages] = useState(initialTotalPages);
 
-  const [filters, setFilters] = useState<AdminTransactionQueryParams>({
-    status: (searchParams.get("status") as TransactionStatus) || undefined,
-    order: (searchParams.get("order") as "asc" | "desc") || "desc",
-    date: searchParams.get("date")
-      ? new Date(searchParams.get("date")!)
-      : undefined,
-    transactionId: searchParams.get("transactionId") || "",
+  // Initialize filters from URL params
+  const [filters, setFilters] = useState<AdminTransactionQueryParams>(() => {
+    const params: AdminTransactionQueryParams = {
+      page: initialPage,
+      limit: initialLimit,
+    };
+
+    const status = searchParams.get("status");
+    const order = searchParams.get("order");
+    const date = searchParams.get("date");
+    const transactionId = searchParams.get("transactionId");
+
+    if (status && status !== "all") {
+      params.status = status as TransactionStatus;
+    }
+    if (order === "asc" || order === "desc") {
+      params.order = order;
+    }
+    if (date) {
+      params.date = new Date(date);
+    }
+    if (transactionId) {
+      params.transactionId = transactionId;
+    }
+
+    return params;
   });
 
-  const [page, setPage] = useState(initialPage);
-  const [limit, setLimit] = useState(initialLimit);
+  // Build query string from filters
+  const buildQueryString = useCallback((filterParams: AdminTransactionQueryParams) => {
+    const params = new URLSearchParams();
+    
+    // Always include page, limit, and type
+    params.set("page", (filterParams.page || 1).toString());
+    params.set("limit", (filterParams.limit || 20).toString());
+    params.set("type", "INTEREST"); // Always filter by INTEREST type
+    
+    // Add optional filters
+    if (filterParams.status && filterParams.status) {
+      params.set("status", filterParams.status);
+    }
+    if (filterParams.order) {
+      params.set("order", filterParams.order);
+    }
+    if (filterParams.date) {
+      params.set("date", filterParams.date.toISOString());
+    }
+    if (filterParams.transactionId) {
+      params.set("transactionId", filterParams.transactionId);
+    }
+    
+    return params.toString();
+  }, []);
 
-  // Calculate stats
-  const totalRois = total;
-  const pendingRois = transactions.filter(
-    (t) => t.status === TransactionStatus.PENDING
-  ).length;
-  const completedRois = transactions.filter(
-    (t) => t.status === TransactionStatus.APPROVED
-  ).length;
-  const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+  // Update URL with filters
+  const updateURL = useCallback((filterParams: AdminTransactionQueryParams) => {
+    const queryString = buildQueryString(filterParams);
+    router.push(`/admin/rois?${queryString}`);
+  }, [router, buildQueryString]);
 
-  // Update URL with filters and paginationRoi
-  const updateURL = useCallback(
-    (
-      newFilters: AdminTransactionQueryParams,
-      newPage: number,
-      newLimit: number
-    ) => {
-      const params = new URLSearchParams();
-
-      if (newFilters.status) params.set("status", newFilters.status);
-      if (newFilters.order) params.set("order", newFilters.order);
-      if (newFilters.date) params.set("date", newFilters.date.toISOString());
-      if (newFilters.transactionId)
-        params.set("transactionId", newFilters.transactionId);
-
-      params.set("page", newPage.toString());
-      params.set("limit", newLimit.toString());
-
-      router.push(`/admin/rois?${params.toString()}`);
-    },
-    [router]
-  );
-
-  // Fetch rois with filters
+  // Fetch ROIs with filters
   const fetchRois = useCallback(async () => {
     setLoading(true);
     try {
-      // In a real app, this would be an API call
-      // Simulate API call with delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const queryString = buildQueryString(filters);
+      const res = await fetch(`/api/admin/transactions?${queryString}`);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const result: ApiResponse<PaginatedResponse<AdminTransactionRow[]>> = await res.json();
 
-      // Filter the initial data based on current filters
-      const filteredTransactions = initialTransactions.filter((transaction) => {
-        if (filters.status && transaction.status !== filters.status) {
-          return false;
-        }
-        if (
-          filters.transactionId &&
-          !transaction.id.includes(filters.transactionId)
-        ) {
-          return false;
-        }
-        if (filters.date) {
-          const transactionDate = new Date(transaction.createdAt);
-          const filterDate = new Date(filters.date);
-          if (
-            transactionDate.getDate() !== filterDate.getDate() ||
-            transactionDate.getMonth() !== filterDate.getMonth() ||
-            transactionDate.getFullYear() !== filterDate.getFullYear()
-          ) {
-            return false;
-          }
-        }
-        return true;
-      });
-
-      // Sort transactions
-      const sortedTransactions = [...filteredTransactions].sort((a, b) => {
-        if (filters.order === "asc") {
-          return (
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          );
-        } else {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        }
-      });
-
-      setTransactions(sortedTransactions);
+      if (result.success && result.data) {
+        setTransactions(result.data.data || []);
+        setCurrentPage(result.data.page);
+        setCurrentLimit(result.data.limit);
+        setCurrentTotal(result.data.total);
+        setCurrentTotalPages(result.data.totalPages);
+      }
     } catch (error) {
-      console.error("Error fetching rois:", error);
+      console.error("Error fetching ROIs:", error);
     } finally {
       setLoading(false);
     }
-  }, [filters, initialTransactions]);
+  }, [filters, buildQueryString]);
 
+  // Initial fetch on mount if URL params differ from initial props
   useEffect(() => {
-    fetchRois();
-    updateURL(filters, page, limit);
-  }, [filters, page, limit, updateURL]);
+    const hasFilterParams = searchParams.get("status") || 
+                           searchParams.get("order") || 
+                           searchParams.get("date") || 
+                           searchParams.get("transactionId");
+    
+    if (hasFilterParams) {
+      fetchRois();
+    }
+  }, []); // Empty dependency array for initial mount only
+
+  // Fetch when filters change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchRois();
+      updateURL(filters);
+    }, 300); // Debounce API calls
+
+    return () => clearTimeout(timer);
+  }, [filters, fetchRois, updateURL]);
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const pendingRois = transactions.filter(
+      (t) => t.status === TransactionStatus.PENDING
+    ).length;
+    const completedRois = transactions.filter(
+      (t) => t.status === TransactionStatus.APPROVED
+    ).length;
+    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+      totalRois: currentTotal,
+      pendingRois,
+      completedRois,
+      totalAmount,
+    };
+  }, [transactions, currentTotal]);
 
   // Handle filter changes
   const handleFilterChange = (
     key: keyof AdminTransactionQueryParams,
     value: any
   ) => {
-    setFilters((prev) => ({
+    setFilters(prev => ({
       ...prev,
-      [key]: value,
+      [key]: value === "" || value === "all" ? undefined : value,
+      page: 1, // Reset to first page when filters change
     }));
-    setPage(1); // Reset to first page when filters change
   };
 
   // Handle clear filters
   const handleClearFilters = () => {
-    setFilters({});
-    setPage(1);
+    setFilters({
+      page: 1,
+      limit: currentLimit,
+    });
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    setFilters(prev => ({
+      ...prev,
+      page: newPage,
+    }));
+  };
+
+  // Handle limit change
+  const handleLimitChange = (newLimit: number) => {
+    setFilters(prev => ({
+      ...prev,
+      limit: newLimit,
+      page: 1, // Reset to first page when changing limit
+    }));
+    setCurrentLimit(newLimit);
   };
 
   // Handle transaction actions
@@ -205,7 +252,6 @@ const RoisClient: React.FC<RoisClientProps> = ({
     action: string
   ) => {
     try {
-      // In a real app, this would be an API call
       console.log(`Action: ${action} on transaction: ${transaction.id}`);
 
       // Update local state for demo
@@ -232,7 +278,6 @@ const RoisClient: React.FC<RoisClientProps> = ({
         )
       );
 
-      // Show success message
       alert(
         `Transaction ${transaction.id} ${action.toLowerCase()}d successfully`
       );
@@ -247,27 +292,27 @@ const RoisClient: React.FC<RoisClientProps> = ({
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <StatsCard
-          title="Total Rois"
-          value={totalRois.toString()}
-          description="All roi transactions"
+          title="Total ROIs"
+          value={stats.totalRois.toString()}
+          description="All ROI transactions"
           icon={StatsIcons.total}
         />
         <StatsCard
-          title="Pending Rois"
-          value={pendingRois.toString()}
+          title="Pending ROIs"
+          value={stats.pendingRois.toString()}
           description="Awaiting approval"
           icon={StatsIcons.pending}
         />
         <StatsCard
-          title="Completed Rois"
-          value={completedRois.toString()}
+          title="Completed ROIs"
+          value={stats.completedRois.toString()}
           description="Successfully processed"
           icon={StatsIcons.completed}
         />
         <StatsCard
           title="Total Amount"
-          value={formatCurrency(totalAmount)}
-          description="Sum of all rois"
+          value={formatCurrency(stats.totalAmount)}
+          description="Sum of all ROIs"
           icon={
             <div className="p-2 rounded-full bg-wg-accent/10">
               <span className="text-wg-accent font-bold">$</span>
@@ -284,7 +329,7 @@ const RoisClient: React.FC<RoisClientProps> = ({
             Filters
           </CardTitle>
           <CardDescription className="text-wg-primary/60">
-            Filter roi transactions by various criteria
+            Filter ROI transactions by various criteria
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -313,12 +358,9 @@ const RoisClient: React.FC<RoisClientProps> = ({
                 Status
               </label>
               <Select
-                value={filters.status || ""}
+                value={filters.status || "all"}
                 onValueChange={(value) =>
-                  handleFilterChange(
-                    "status",
-                    value === "" ? undefined : (value as TransactionStatus)
-                  )
+                  handleFilterChange("status", value)
                 }
               >
                 <SelectTrigger className="bg-wg-neutral border-wg-accent/20 text-wg-primary">
@@ -327,9 +369,9 @@ const RoisClient: React.FC<RoisClientProps> = ({
                 <SelectContent className="bg-wg-neutral2 border-wg-accent/20">
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="COMPLETED">Completed</SelectItem>
-                  <SelectItem value="FAILED">Failed</SelectItem>
-                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                  <SelectItem value="APPROVED">Approved</SelectItem>
+                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value="PAID">Paid</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -379,7 +421,8 @@ const RoisClient: React.FC<RoisClientProps> = ({
           {/* Filter Actions */}
           <div className="flex justify-between items-center mt-6">
             <div className="text-sm text-wg-primary/60">
-              Showing {transactions.length} of {total} rois
+              Showing {((filters.page || 1) - 1) * currentLimit + 1} to{" "}
+              {Math.min((filters.page || 1) * currentLimit, currentTotal)} of {currentTotal} ROIs
             </div>
             <div className="flex gap-2">
               <Button
@@ -404,10 +447,10 @@ const RoisClient: React.FC<RoisClientProps> = ({
       <Card className="bg-wg-neutral2 border-wg-accent/20">
         <CardHeader>
           <CardTitle className="text-wg-primary">
-            Roi Transactions
+            ROI Transactions
           </CardTitle>
           <CardDescription className="text-wg-primary/60">
-            View and manage all roi transactions
+            View and manage all ROI transactions
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -428,7 +471,7 @@ const RoisClient: React.FC<RoisClientProps> = ({
           />
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {currentTotalPages > 1 && (
             <div className="mt-6">
               <Pagination>
                 <PaginationContent>
@@ -437,26 +480,28 @@ const RoisClient: React.FC<RoisClientProps> = ({
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        if (page > 1) setPage(page - 1);
+                        if (filters.page && filters.page > 1) {
+                          handlePageChange(filters.page - 1);
+                        }
                       }}
                       className={
-                        page <= 1
+                        (filters.page || 1) <= 1
                           ? "pointer-events-none opacity-50"
                           : "hover:bg-wg-accent/20"
                       }
                     />
                   </PaginationItem>
 
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  {Array.from({ length: Math.min(5, currentTotalPages) }, (_, i) => {
                     let pageNum;
-                    if (totalPages <= 5) {
+                    if (currentTotalPages <= 5) {
                       pageNum = i + 1;
-                    } else if (page <= 3) {
+                    } else if ((filters.page || 1) <= 3) {
                       pageNum = i + 1;
-                    } else if (page >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
+                    } else if ((filters.page || 1) >= currentTotalPages - 2) {
+                      pageNum = currentTotalPages - 4 + i;
                     } else {
-                      pageNum = page - 2 + i;
+                      pageNum = (filters.page || 1) - 2 + i;
                     }
 
                     return (
@@ -465,11 +510,11 @@ const RoisClient: React.FC<RoisClientProps> = ({
                           href="#"
                           onClick={(e) => {
                             e.preventDefault();
-                            setPage(pageNum);
+                            handlePageChange(pageNum);
                           }}
-                          isActive={pageNum === page}
+                          isActive={pageNum === (filters.page || 1)}
                           className={
-                            pageNum === page
+                            pageNum === (filters.page || 1)
                               ? "bg-wg-accent text-white hover:bg-wg-accent/90"
                               : "hover:bg-wg-accent/20"
                           }
@@ -485,10 +530,12 @@ const RoisClient: React.FC<RoisClientProps> = ({
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        if (page < totalPages) setPage(page + 1);
+                        if (filters.page && filters.page < currentTotalPages) {
+                          handlePageChange(filters.page + 1);
+                        }
                       }}
                       className={
-                        page >= totalPages
+                        (filters.page || 1) >= currentTotalPages
                           ? "pointer-events-none opacity-50"
                           : "hover:bg-wg-accent/20"
                       }
@@ -501,8 +548,8 @@ const RoisClient: React.FC<RoisClientProps> = ({
               <div className="flex items-center justify-center gap-2 mt-4 text-sm text-wg-primary/60">
                 <span>Show</span>
                 <Select
-                  value={limit.toString()}
-                  onValueChange={(value) => setLimit(parseInt(value))}
+                  value={currentLimit.toString()}
+                  onValueChange={(value) => handleLimitChange(parseInt(value))}
                 >
                   <SelectTrigger className="w-20 h-8 bg-wg-neutral border-wg-accent/20 text-wg-primary">
                     <SelectValue />

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { TransactionFilter, TransactionResponse } from "@/types/type";
+import { useCallback, useEffect, useState, useMemo } from "react";
+import { ApiResponse, TransactionQueryParams, TransactionResponse } from "@/types/type";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -33,7 +33,7 @@ import { TransactionStatus, TransactionType } from "@prisma/client";
 import { DateRange } from "react-day-picker";
 import TransactionTable from "@/components/transaction/TransactionTable";
 import TransactionDetailsModal from "@/components/transaction/TransactionDetailsModal";
-import { AdminTransactionRow } from "@/types/adminType";
+import { AdminTransactionRow, PaginatedResponse } from "@/types/adminType";
 
 interface TransactionClientProps {
   initialTransactions: AdminTransactionRow[];
@@ -50,10 +50,9 @@ const TransactionClient = ({
   limit,
   totalPages,
 }: TransactionClientProps) => {
-  const [transactions, setTransactions] =
-    useState<AdminTransactionRow[]>(initialTransactions);
+  const [transactions, setTransactions] = useState<AdminTransactionRow[]>(initialTransactions);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState<TransactionFilter>({
+  const [filters, setFilters] = useState<TransactionQueryParams>({
     page: page,
     limit: limit,
   });
@@ -61,93 +60,146 @@ const TransactionClient = ({
     from: undefined,
     to: undefined,
   });
-  const [selectedTransaction, setSelectedTransaction] =
-    useState<AdminTransactionRow | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<AdminTransactionRow | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [currentTotal, setCurrentTotal] = useState(total);
+  const [currentTotalPages, setCurrentTotalPages] = useState(totalPages);
 
-  
-  const fetchTransactions = useCallback(
-    async (filterParams: TransactionFilter) => {
-      setLoading(true);
-
-      try {
-        const queryParams = new URLSearchParams();
-
-        if (filterParams.type) queryParams.append("type", filterParams.type);
-        if (filterParams.status)
-          queryParams.append("status", filterParams.status);
-        if (filterParams.startDate)
-          queryParams.append("startDate", filterParams.startDate);
-        if (filterParams.endDate)
-          queryParams.append("endDate", filterParams.endDate);
-        if (filterParams.page)
-          queryParams.append("page", filterParams.page.toString());
-        if (filterParams.limit)
-          queryParams.append("limit", filterParams.limit.toString());
-
-        const response = await fetch(`/api/transactions?${queryParams}`);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch transactions");
-        }
-
-        const data: TransactionResponse = await response.json();
-
-        // ✅ Guard: only update if valid
-        if (Array.isArray(data.transactions)) {
-          setTransactions(data.transactions);
-        }
-        // else → do nothing (preserves previous state)
-      } catch (error) {
-        console.error("Failed to fetch transactions:", error);
-      } finally {
-        setLoading(false);
+  // Convert filters to query string
+  const buildQueryString = useCallback((filterParams: TransactionQueryParams) => {
+    const params = new URLSearchParams();
+    
+    // Add all filter parameters
+    Object.entries(filterParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
       }
-    },
-    [] // ✅ no filters dependency
-  );
+    });
+    
+    return params.toString();
+  }, []);
+
+  // Update URL function
+  const updateURL = useCallback((filterParams: TransactionQueryParams) => {
+    const queryString = buildQueryString(filterParams);
+    const newUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
+    window.history.pushState({}, '', newUrl);
+  }, [buildQueryString]);
+
+  const fetchTransactions = useCallback(async (filterParams?: TransactionQueryParams) => {
+    setLoading(true);
+    try {
+      const queryParams = filterParams || filters;
+      const queryString = buildQueryString(queryParams);
+      
+      const res = await fetch(`/api/client/transactions?${queryString}`);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const result: ApiResponse<PaginatedResponse<AdminTransactionRow[]>> = await res.json();
+
+      if (result.success && result.data) {
+        setTransactions(result.data.data ?? []);
+        setCurrentTotal(result.data.total);
+        setCurrentTotalPages(result.data.totalPages);
+        
+        // Update filters with new pagination info
+        if (result.data.page && result.data.limit) {
+          setFilters(prev => ({
+            ...prev,
+            page: result?.data?.page,
+            limit: result?.data?.limit
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      // Keep existing transactions on error
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, buildQueryString]);
+
+  // Initial fetch on mount
+  useEffect(() => {
+    // Only fetch if we have filters different from initial
+    if (filters.page !== page || filters.limit !== limit || 
+        filters.type || filters.status || filters.from || filters.to) {
+      fetchTransactions();
+    }
+  }, []); // Empty dependency array for initial mount only
+
+  // Fetch when filters change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchTransactions();
+      updateURL(filters);
+    }, 300); // Debounce to prevent too many requests
+
+    return () => clearTimeout(timer);
+  }, [filters, fetchTransactions, updateURL]);
 
   const handleFilterChange = () => {
-    const updatedFilters: TransactionFilter = {
+    const updatedFilters: TransactionQueryParams = {
       ...filters,
-      page: 1,
-      startDate: dateRange.from?.toISOString(),
-      endDate: dateRange.to?.toISOString(),
+      page: 1, // Reset to first page when applying filters
+      from: dateRange.from?.toISOString(),
+      to: dateRange.to?.toISOString(),
     };
+    
+    // Remove date filters if not set
+    if (!dateRange.from) delete updatedFilters.from;
+    if (!dateRange.to) delete updatedFilters.to;
+    
     setFilters(updatedFilters);
-    fetchTransactions(updatedFilters);
   };
 
   const handleResetFilters = () => {
-    setFilters({ page: 1, limit });
+    const resetFilters: TransactionQueryParams = {
+      page: 1,
+      limit: limit,
+    };
+    
+    setFilters(resetFilters);
     setDateRange({
       from: undefined,
       to: undefined,
     });
-    fetchTransactions({ page: 1, limit });
   };
 
-  console.log(transactions);
+  // Handle filter changes from select components
+  const handleTypeChange = (value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      page: 1,
+      type: value === "all" ? undefined : value as TransactionType
+    }));
+  };
+
+  const handleStatusChange = (value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      page: 1,
+      status: value === "all" ? undefined : value as TransactionStatus
+    }));
+  };
+
   return (
     <div className="space-y-6">
       {/* Filters Section */}
       <div className="space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
           {/* Transaction Type Filter */}
-          <div className="space-y-2 ">
+          <div className="space-y-2">
             <label className="text-sm font-medium text-wg-primary flex items-center gap-2">
               <Filter className="h-3.5 w-3.5" />
               Transaction Type
             </label>
             <Select
-              value={filters.type || ""}
-              onValueChange={(value) =>
-                setFilters({
-                  ...filters,
-                  type: value as TransactionType,
-                  page: 1,
-                })
-              }
+              value={filters.type || "all"}
+              onValueChange={handleTypeChange}
             >
               <SelectTrigger className="bg-wg-primary/5 border-wg-primary/20 hover:bg-wg-primary/10 focus:ring-wg-accent/20 w-full">
                 <SelectValue placeholder="All Types" />
@@ -185,14 +237,8 @@ const TransactionClient = ({
               Status
             </label>
             <Select
-              value={filters.status || ""}
-              onValueChange={(value) =>
-                setFilters({
-                  ...filters,
-                  status: value as TransactionStatus,
-                  page: 1,
-                })
-              }
+              value={filters.status || "all"}
+              onValueChange={handleStatusChange}
             >
               <SelectTrigger className="bg-wg-primary/5 border-wg-primary/20 hover:bg-wg-primary/10 focus:ring-wg-accent/20 w-full">
                 <SelectValue placeholder="All Status" />
@@ -319,7 +365,6 @@ const TransactionClient = ({
               window.open(transaction.proofUrl, "_blank");
             }
           }}
-          // isAdmin={user === "admin"}
           onAction={(transaction, action) => {
             // Handle admin actions
             console.log(`Action: ${action} on transaction: ${transaction.id}`);
@@ -327,7 +372,7 @@ const TransactionClient = ({
         />
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {currentTotalPages > 1 && (
           <div className="mt-8">
             <Pagination>
               <PaginationContent>
@@ -346,7 +391,7 @@ const TransactionClient = ({
                   />
                 </PaginationItem>
 
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                {Array.from({ length: Math.min(5, currentTotalPages) }, (_, i) => {
                   const pageNum = i + 1;
                   return (
                     <PaginationItem key={pageNum}>
@@ -370,7 +415,7 @@ const TransactionClient = ({
                   );
                 })}
 
-                {totalPages > 5 && (
+                {currentTotalPages > 5 && (
                   <PaginationItem>
                     <span className="px-4 py-2 text-wg-primary/40">...</span>
                   </PaginationItem>
@@ -381,12 +426,12 @@ const TransactionClient = ({
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      if (filters.page && filters.page < totalPages) {
+                      if (filters.page && filters.page < currentTotalPages) {
                         setFilters({ ...filters, page: filters.page + 1 });
                       }
                     }}
                     className={`border-wg-primary/20 hover:bg-wg-primary/5 ${
-                      filters.page === totalPages
+                      filters.page === currentTotalPages
                         ? "pointer-events-none opacity-50"
                         : ""
                     }`}
@@ -397,7 +442,7 @@ const TransactionClient = ({
 
             <div className="text-center text-sm text-wg-primary/60 mt-4">
               Showing {((filters.page || 1) - 1) * limit + 1} to{" "}
-              {Math.min((filters.page || 1) * limit, total)} of {total}{" "}
+              {Math.min((filters.page || 1) * limit, currentTotal)} of {currentTotal}{" "}
               transactions
             </div>
           </div>
@@ -409,7 +454,6 @@ const TransactionClient = ({
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         transaction={selectedTransaction}
-        // isAdmin={user?.role === "admin"}
         onAction={(transaction, action) => {
           // Handle admin actions
           console.log(`Action: ${action} on transaction: ${transaction.id}`);
