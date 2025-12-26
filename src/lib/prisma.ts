@@ -1,18 +1,44 @@
+import "server-only";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from '@prisma/adapter-pg';
 import { config } from "./config";
 
-declare global {
-  var prismaGlobal: PrismaClient | undefined;
+const adapter = new PrismaPg({
+  connectionString: config.DATABASE_URL!,
+});
+
+export const prisma = new PrismaClient({ adapter });
+export default prisma;
+
+export async function checkDbConnection(): Promise<void> {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    console.info('✅ Database connection established');
+  } catch (error) {
+    console.error('❌ Database connection failed', error);
+    throw error;
+  }
 }
 
-export const prisma =
-  global.prismaGlobal ??
-  new PrismaClient({
-    log: config.NODE_ENV === "development"
-      ? ["query", "error", "warn"]
-      : ["error"],
-  });
+export async function getDbHealth() {
+  const start = Date.now();
 
-if (config.NODE_ENV === "development") {
-  global.prismaGlobal = prisma;
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+
+    return {
+      status: 'healthy',
+      database: 'postgresql',
+      latencyMs: Date.now() - start,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    return {
+      status: 'unhealthy',
+      database: 'postgresql',
+      latencyMs: null,
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
 }

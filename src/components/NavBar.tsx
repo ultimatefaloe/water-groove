@@ -1,14 +1,13 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState, useEffect } from "react";
-import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { publicNavItems } from "@/navigations";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
@@ -36,7 +35,6 @@ const Navbar = () => {
 
   // Close mobile menu when route changes
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
@@ -76,7 +74,10 @@ const Navbar = () => {
               <div className="flex h-20 w-20 items-center justify-center">
                 <img 
                   src="/logo_t.png" 
-                  alt="water Groove Logo "
+                  alt="Water Grove Logo" 
+                  width={100} 
+                  height={100} 
+                  className="h-20 w-20"
                 />
               </div>
               <span className="text-lg font-bold text-wg-primary">
@@ -135,12 +136,12 @@ const Navbar = () => {
               </div>
             ) : (
               <>
-                <Link href="/login">
+                <Link href="/auth/login">
                   <Button variant="ghost" className="text-wg-primary hover:text-wg-primary hover:bg-wg-secondary/50">
                     Login
                   </Button>
                 </Link>
-                <Link href="/register">
+                <Link href="/auth/login">
                   <Button className="bg-wg-primary hover:bg-wg-primary/90 text-wg-secondary">
                     Get Started
                   </Button>
@@ -255,12 +256,12 @@ const Navbar = () => {
                         </>
                       ) : (
                         <>
-                          <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
                             <Button variant="outline" className="w-full text-wg-primary border-sidebar-border hover:bg-wg-secondary/50">
                               Login
                             </Button>
                           </Link>
-                          <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
                             <Button className="w-full bg-wg-primary hover:bg-wg-primary/90 text-wg-secondary">
                               Get Started
                             </Button>
@@ -269,8 +270,6 @@ const Navbar = () => {
                       )}
                     </div>
                   </div>
-
-                 
                 </div>
               </SheetContent>
             </Sheet>
