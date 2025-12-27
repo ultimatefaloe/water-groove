@@ -28,7 +28,7 @@ interface TransactionDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   transaction: AdminTransactionRow | null;
-  onAction: (transaction: AdminTransactionRow, action: string) => void;
+  onAction: (transaction: AdminTransactionRow, action: "APPROVE" | "REJECT") => void;
   isAdmin?: boolean;
 }
 

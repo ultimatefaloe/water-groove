@@ -18,7 +18,7 @@ const Transactions = async ({
   // Build query params from search params
   const queryParams: TransactionQueryParams = {
     page: typeof searchParams.page === "number" ? Number(searchParams.page) : 1,
-    limit: typeof searchParams.limit === "number" ? Number(searchParams.limit) : 1,
+    limit: typeof searchParams.limit === "number" ? Number(searchParams.limit) : 20,
     type:
       typeof searchParams.type === "string"
         ? (searchParams.type as TransactionType)

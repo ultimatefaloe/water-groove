@@ -39,6 +39,14 @@ export async function getDashboardOverview(
     },
   });
 
+  const walletStats = await prisma.investorBalance.findFirst({
+    where: {
+      investment: {
+        userId,
+      },
+    }
+  });
+
   // 4️⃣ Transactions + pending aggregates (parallel)
   const [
     transactions,
@@ -80,7 +88,8 @@ export async function getDashboardOverview(
       totalDeposits: Number(walletAgg._sum.totalDeposited ?? 0),
       totalWithdrawals: Number(walletAgg._sum.totalWithdrawn ?? 0),
       totalInterest: Number(walletAgg._sum.roiAccrued ?? 0),
-      currentBalance: Number(walletAgg._sum.availableBalance ?? 0),
+      availableBalance: Number(walletStats?.availableBalance ?? 0),
+      principalBalance: Number(walletStats?.principalLocked ?? 0),
       pendingWithdrawals: Number(pendingWithdrawalsAgg._sum.amount ?? 0),
       pendingDeposits: Number(pendingDepositsAgg._sum.amount ?? 0),
     },

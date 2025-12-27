@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerAdminId } from '@/lib/server/auth0-server';
 import { AdminTransactionQueryParams } from '@/types/adminType';
 import { getTransactions } from '@/services/admin/r.service';
+import { approveDeposit } from '@/services/admin/cud.service';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

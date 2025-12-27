@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Table,
   TableBody,
@@ -18,18 +18,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Eye, FileText, Download } from "lucide-react";
-import { AdminTransactionRow} from "@/types/adminType";
-import { TransactionStatus } from '@prisma/client';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { AdminTransactionRow } from "@/types/adminType";
+import { TransactionStatus } from "@prisma/client";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface TransactionTableProps {
   transactions: AdminTransactionRow[];
   loading: boolean;
   onViewDetails: (transaction: AdminTransactionRow) => void;
   onDownloadProof: (transaction: AdminTransactionRow) => void;
-  onAction: (transaction: AdminTransactionRow, action: string) => void;
+  onAction: (
+    transaction: AdminTransactionRow,
+    action:  "APPROVE" | "REJECT" | "PAID"
+  ) => void;
   isAdmin?: boolean;
-} 
+}
 
 const TransactionTable: React.FC<TransactionTableProps> = ({
   transactions,
@@ -44,28 +47,33 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
     switch (status) {
       case TransactionStatus.APPROVED:
         return {
-          className: "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30",
-          label: 'Completed'
+          className:
+            "bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30",
+          label: "Approved",
         };
       case TransactionStatus.PENDING:
         return {
-          className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30",
-          label: 'Pending'
+          className:
+            "bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30",
+          label: "Pending",
         };
       case TransactionStatus.PAID:
         return {
-          className: "bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30",
-          label: 'Paid'
+          className:
+            "bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30",
+          label: "Paid",
         };
       case TransactionStatus.REJECTED:
         return {
-          className: "bg-gray-500/20 text-gray-400 border-gray-500/30 hover:bg-gray-500/30",
-          label: 'Cancelled'
+          className:
+            "bg-gray-500/20 text-gray-400 border-gray-500/30 hover:bg-gray-500/30",
+          label: "Rejected",
         };
       default:
         return {
-          className: "bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30",
-          label: status
+          className:
+            "bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30",
+          label: status,
         };
     }
   };
@@ -74,7 +82,10 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-16 bg-wg-primary2/50 rounded-lg animate-pulse" />
+          <div
+            key={i}
+            className="h-16 bg-wg-primary2/50 rounded-lg animate-pulse"
+          />
         ))}
       </div>
     );
@@ -97,28 +108,45 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
   }
 
   return (
-    <div className="rounded-md border border-wg-accent/20 overflow-hidden">
+    <div className="rounded-md border border-wg-accent/20 overflow-hidden grid">
       <Table>
         <TableHeader>
           <TableRow className="border-b-wg-accent/20 hover:bg-transparent">
-            <TableHead className="text-wg-primary font-medium">Transaction ID</TableHead>
-            <TableHead className="text-wg-primary font-medium">User ID</TableHead>
-            <TableHead className="text-wg-primary font-medium">Amount</TableHead>
+            <TableHead className="text-wg-primary font-medium">
+              Transaction ID
+            </TableHead>
+            <TableHead className="text-wg-primary font-medium">
+              User ID
+            </TableHead>
+            <TableHead className="text-wg-primary font-medium">
+              Amount
+            </TableHead>
             <TableHead className="text-wg-primary font-medium">Type</TableHead>
-            <TableHead className="text-wg-primary font-medium">Status</TableHead>
-            <TableHead className="text-wg-primary font-medium">Created</TableHead>
-            <TableHead className="text-wg-primary font-medium text-right">Actions</TableHead>
+            <TableHead className="text-wg-primary font-medium">
+              Status
+            </TableHead>
+            <TableHead className="text-wg-primary font-medium">
+              Created
+            </TableHead>
+            <TableHead className="text-wg-primary font-medium text-right">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {transactions.map((transaction) => {
             const statusBadge = getStatusBadgeVariant(transaction.status);
-            
+
             return (
-              <TableRow key={transaction.id} className="border-b-wg-accent/10 hover:bg-wg-primary/10">
+              <TableRow
+                key={transaction.id}
+                className="border-b-wg-accent/10 hover:bg-wg-primary/10"
+              >
                 <TableCell className="font-medium text-wg-primary">
                   <div className="flex flex-col">
-                    <span className="text-sm">{transaction.id.substring(0, 8)}...</span>
+                    <span className="text-sm">
+                      {transaction.id.substring(0, 8)}...
+                    </span>
                     {transaction.description && (
                       <span className="text-xs text-wg-primary/60 truncate max-w-[200px]">
                         {transaction.description}
@@ -153,7 +181,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                     >
                       <Eye className="h-4 w-4 text-wg-primary" />
                     </Button>
-                    
+
                     {transaction.proofUrl && (
                       <Button
                         variant="ghost"
@@ -168,45 +196,52 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                     {isAdmin && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="icon"
                             className="h-8 w-8 hover:bg-wg-accent/20"
                           >
                             <MoreVertical className="h-4 w-4 text-wg-primary" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent 
-                          align="end" 
-                          className="bg-wg-primary2 border-wg-accent/20 w-48"
+                        <DropdownMenuContent
+                          align="end"
+                          className="bg-wg-neutral border-wg-secondary/20 w-48"
                         >
-                          <DropdownMenuLabel className="text-wg-primary">
+                          {/* <DropdownMenuLabel className="text-wg-primary">
                             Admin Actions
-                          </DropdownMenuLabel>
+                          </DropdownMenuLabel> */}
                           <DropdownMenuSeparator className="bg-wg-accent/20" />
-                          
-                          {transaction.status === 'PENDING' && (
+
+                          {transaction.status === "PENDING" && (
                             <>
-                              <DropdownMenuItem 
-                                onClick={() => onAction(transaction, 'APPROVE')}
+                              <DropdownMenuItem
+                                onClick={() => onAction(transaction, "APPROVE")}
                                 className="text-green-400 hover:bg-green-500/20 cursor-pointer"
                               >
                                 <span className="mr-2">✓</span>
-                                Approve Deposit
+                                Approve
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => onAction(transaction, 'REJECT')}
+                              <DropdownMenuItem
+                                onClick={() => onAction(transaction, "REJECT")}
                                 className="text-red-400 hover:bg-red-500/20 cursor-pointer"
                               >
                                 <span className="mr-2">✗</span>
-                                Reject Deposit
+                                Reject
+                              </DropdownMenuItem>
+                               <DropdownMenuItem
+                                onClick={() => onAction(transaction, "PAID")}
+                                className="text-blue-400 hover:bg-blue-500/20 cursor-pointer"
+                              >
+                                <span className="mr-2">✗</span>
+                                Paid
                               </DropdownMenuItem>
                             </>
                           )}
-                          
-                          {(transaction.status === TransactionStatus.APPROVED || transaction.status === TransactionStatus.PENDING) && (
+
+                          {/* {(transaction.status === TransactionStatus.APPROVED || transaction.status === TransactionStatus.PENDING) && (
                             <DropdownMenuItem 
-                              onClick={() => onAction(transaction, 'CANCEL')}
+                              onClick={() => onAction(transaction, 'APPROVE')}
                               className="text-gray-400 hover:bg-gray-500/20 cursor-pointer"
                             >
                               <span className="mr-2">⊖</span>
@@ -216,12 +251,12 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                           
                           <DropdownMenuSeparator className="bg-wg-accent/20" />
                           <DropdownMenuItem 
-                            onClick={() => onAction(transaction, 'REFUND')}
+                            onClick={() => onAction(transaction, 'REJECT')}
                             className="text-yellow-400 hover:bg-yellow-500/20 cursor-pointer"
                           >
                             <span className="mr-2">↺</span>
                             Process Refund
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}

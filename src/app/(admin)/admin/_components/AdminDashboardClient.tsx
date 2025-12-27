@@ -49,9 +49,61 @@ const renderColorfulLegendText = (value: string, entry: any) => {
 
 interface AdminDashboardClientProps {
   serverData?: AdminDashboardOverview;
+  isFallbackData?: boolean;
 }
 
-const AdminDashboardClient = ({ serverData }: AdminDashboardClientProps) => {
+// Fallback warning banner component
+const FallbackWarning = ({ 
+  onRetry, 
+  onDismiss 
+}: { 
+  onRetry: () => void; 
+  onDismiss: () => void;
+}) => {
+  return (
+    <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-full bg-yellow-500/20">
+            <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.714-.833-2.484 0L4.732 16.5C3.962 17.333 4.924 19 6.464 19z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-semibold text-yellow-400">Using Fallback Data</h3>
+            <p className="text-sm text-wg-primary/60 mt-1">
+              Unable to fetch live dashboard data. Displaying fallback values. System health is marked as UNHEALTHY.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onDismiss}
+          className="text-wg-primary/40 hover:text-wg-primary p-1"
+          aria-label="Dismiss warning"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div className="mt-3">
+        <button
+          onClick={onRetry}
+          className="text-sm bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 px-3 py-1.5 rounded-md transition-colors"
+        >
+          Retry Loading Data
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const AdminDashboardClient = ({ 
+  serverData, 
+  isFallbackData = false 
+}: AdminDashboardClientProps) => {
+  const [showFallbackWarning, setShowFallbackWarning] = useState(isFallbackData);
+  
   // Prepare data for Chart 1: Users and Investments
   const chart1Data = serverData
     ? [
@@ -98,6 +150,16 @@ const AdminDashboardClient = ({ serverData }: AdminDashboardClientProps) => {
         },
       ]
     : [];
+
+  // Handle retry loading data
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
+  // Handle dismissing the warning
+  const handleDismissWarning = () => {
+    setShowFallbackWarning(false);
+  };
 
   // Stats Icons
   const StatsIcons = {
@@ -163,64 +225,125 @@ const AdminDashboardClient = ({ serverData }: AdminDashboardClientProps) => {
     ),
   };
 
+  // Function to determine system health color
+  const getSystemHealthColor = (healthStatus?: string) => {
+    if (!healthStatus) return "bg-gray-500";
+    
+    switch (healthStatus.toUpperCase()) {
+      case "HEALTHY":
+        return "bg-green-500";
+      case "UNHEALTHY":
+        return "bg-red-500";
+      case "CRITICAL":
+        return "bg-red-500 animate-pulse";
+      case "DEGRADED":
+        return "bg-yellow-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  // Function to determine system health label
+  const getSystemHealthLabel = (healthStatus?: string) => {
+    if (!healthStatus) return "UNKNOWN";
+    
+    switch (healthStatus.toUpperCase()) {
+      case "HEALTHY":
+        return "HEALTHY";
+      case "UNHEALTHY":
+        return "UNHEALTHY";
+      case "CRITICAL":
+        return "CRITICAL";
+      case "DEGRADED":
+        return "DEGRADED";
+      default:
+        return healthStatus;
+    }
+  };
+
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6 bg-wg-neutral">
+      {/* Show warning when using fallback data */}
+      {showFallbackWarning && (
+        <FallbackWarning 
+          onRetry={handleRetry} 
+          onDismiss={handleDismissWarning} 
+        />
+      )}
+      
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-wg-primary">Admin Dashboard</h1>
+        <p className="text-wg-primary/60 mt-2">
+          Overview of your investment platform statistics
+          {isFallbackData && (
+            <span className="text-yellow-400 ml-2">
+              (Using fallback data)
+            </span>
+          )}
+        </p>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatsCard
           title="Total Users"
-          value={serverData?.totalUsers.toString() || '0'}
+          value={serverData?.totalUsers?.toString() || "0"}
           description="Active platform users"
           icon={StatsIcons.users}
-          // loading={loading}
         />
         <StatsCard
           title="Total Investments"
-          value={serverData?.totalInvestment.toString() || '0'}
+          value={serverData?.totalInvestment?.toString() || "0"}
           description="Active investments"
           icon={StatsIcons.investment}
-          // loading={loading}
         />
         <StatsCard
           title="Total Principal"
           value={serverData?.totalPrincipalAmount || 0}
           description="Total principal amount"
           icon={StatsIcons.deposit}
-          // loading={loading}
         />
         <StatsCard
           title="System Health"
-          value={serverData?.systemHealth || "LOADING"}
+          value={getSystemHealthLabel(serverData?.systemHealth)}
           description="Platform status"
           icon={
             <div
-              className={`w-3 h-3 rounded-full ${
-                serverData?.systemHealth === "HEALTHY"
-                  ? "bg-green-500"
-                  : "bg-red-500"
-              }`}
+              className={`w-3 h-3 rounded-full ${getSystemHealthColor(serverData?.systemHealth)}`}
             />
           }
-          // loading={loading}
         />
       </div>
 
       {/* Charts Grid */}
       <div className="space-y-8">
         {/* Chart 1: Users and Investments */}
-        <Card className="bg-wg-neutral border-wg-accent/20">
+        <Card className="bg-white border-wg-accent/20 shadow-sm">
           <CardHeader>
             <CardTitle className="text-wg-primary">
               Users vs Investments
+              {isFallbackData && (
+                <span className="text-xs text-yellow-500 ml-2 font-normal">
+                  (Demo Data)
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chart1Data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
-                  <YAxis stroke="#9CA3AF" fontSize={12} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="#6b7280" 
+                    fontSize={12} 
+                  />
+                  <YAxis 
+                    stroke="#6b7280" 
+                    fontSize={12} 
+                  />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend formatter={renderColorfulLegendText} />
                   <Bar
@@ -242,20 +365,25 @@ const AdminDashboardClient = ({ serverData }: AdminDashboardClientProps) => {
         </Card>
 
         {/* Chart 2: Financial Overview */}
-        <Card className="bg-wg-neutral border-wg-accent/20">
+        <Card className="bg-white border-wg-accent/20 shadow-sm">
           <CardHeader>
             <CardTitle className="text-wg-primary">
               Financial Overview (Amounts)
+              {isFallbackData && (
+                <span className="text-xs text-yellow-500 ml-2 font-normal">
+                  (Demo Data)
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chart2Data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
                   <YAxis
-                    stroke="#9CA3AF"
+                    stroke="#6b7280"
                     fontSize={12}
                     tickFormatter={(value) =>
                       new Intl.NumberFormat("en-US", {
@@ -297,19 +425,24 @@ const AdminDashboardClient = ({ serverData }: AdminDashboardClientProps) => {
         </Card>
 
         {/* Chart 3: Transaction Counts */}
-        <Card className="bg-wg-neutral border-wg-accent/20">
+        <Card className="bg-white border-wg-accent/20 shadow-sm">
           <CardHeader>
             <CardTitle className="text-wg-primary">
               Transaction Counts
+              {isFallbackData && (
+                <span className="text-xs text-yellow-500 ml-2 font-normal">
+                  (Demo Data)
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chart3Data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
-                  <YAxis stroke="#9CA3AF" fontSize={12} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                  <YAxis stroke="#6b7280" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend formatter={renderColorfulLegendText} />
                   <Bar
@@ -331,17 +464,24 @@ const AdminDashboardClient = ({ serverData }: AdminDashboardClientProps) => {
         </Card>
 
         {/* Chart 4: Pending Items */}
-        <Card className="bg-wg-neutral border-wg-accent/20">
+        <Card className="bg-white border-wg-accent/20 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-wg-primary">Pending Items</CardTitle>
+            <CardTitle className="text-wg-primary">
+              Pending Items
+              {isFallbackData && (
+                <span className="text-xs text-yellow-500 ml-2 font-normal">
+                  (Demo Data)
+                </span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chart4Data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} />
-                  <YAxis stroke="#9CA3AF" fontSize={12} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                  <YAxis stroke="#6b7280" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend formatter={renderColorfulLegendText} />
                   <Bar

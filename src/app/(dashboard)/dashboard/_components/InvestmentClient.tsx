@@ -241,7 +241,7 @@ const InvestmentClient = ({
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium text-wg-primary/60">
-                  Active Returns
+                  Monthly Active Returns
                 </div>
                 <div className="text-2xl font-bold text-emerald-600 mt-2">
                   {formatCurrency(
@@ -379,7 +379,7 @@ const InvestmentClient = ({
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="text-xs text-emerald-800/70">
-                            Estimated Returns
+                            Monthly Estimated Returns
                           </div>
                           <div className="text-lg font-bold text-emerald-700">
                             +{formatCurrency(estimatedReturns)}
@@ -390,7 +390,7 @@ const InvestmentClient = ({
                     </div>
                   </CardContent>
 
-                  <CardFooter className="border-t border-wg-primary/5 pt-4">
+                  <CardFooter className="border-t border-wg-primary/5 p-2">
                     <Button
                       onClick={() => onViewDetails?.(investment)}
                       variant="outline"

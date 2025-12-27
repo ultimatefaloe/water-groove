@@ -103,7 +103,8 @@ export interface WalletSummaryDto {
   totalDeposits: number
   totalWithdrawals: number
   totalInterest: number
-  currentBalance: number
+  availableBalance: number
+  principalBalance: number
   pendingWithdrawals: number
   pendingDeposits: number
 }
@@ -348,11 +349,22 @@ export interface InvestmenCrontDto {
   createdAt: string
   investorBalance: InvestorBalanceDto
 }
+// types/type.ts
+export interface Auth0User {
+  name?: string | null;
+  nickname?: string | null;
+  picture?: string | null;
+  email?: string | null;
+  [key: string]: any; // For custom properties like 'role'
+}
 
-
-
-// `REF-WG-${Date.now()}`
-// const isLocked =
-//   now < investment.startDate + 18 months
-// penalty = principalAmount * 0.25
-// payout = requestedAmount - penalty
+export interface AuthData {
+  error?: Error | string | null;
+  isLoading?: boolean;
+  user?: {
+    name: string;
+    picture?: string;
+    email: string;
+    role?: string;
+  } | null;
+}

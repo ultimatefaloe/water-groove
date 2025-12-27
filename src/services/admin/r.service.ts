@@ -15,7 +15,6 @@ export async function getTransactions(
   type: TransactionType,
   params: AdminTransactionQueryParams & { page?: number; limit?: number }
 ) {
-  console.log(adminId)
   await authorizeAdmin(adminId)
 
   let page = params.page ?? 1
@@ -49,9 +48,7 @@ export async function getTransactions(
       }
     })
   ])
-  console.log(transactions)
   const txns = transactions.map(mapTransactionToAdminRow)
-  console.log(txns)
 
   return {
     success: true,
