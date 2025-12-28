@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { resolveServerAuth } from "@/lib/server/auth0-server";
 import { DashboardOverviewData, CategoryDto, BankDetails, ApiResponse, TransactionResponse, TransactionQueryParams, InvestmentDto } from "@/types/type"
 import { mapCategoryToDto, mapInvestmentToDto, mapInvestmentWithCategoryToDto, mapTransactionToAdminRow, mapTransactionToDto, mapUserToDto } from '@/utils/mapper';
-import { InvestmentStatus, TransactionStatus, TransactionType } from "@prisma/client"
+import { InvestmentStatus, Prisma, TransactionStatus, TransactionType } from "@prisma/client"
 
 async function authorizeUser(userId: string) {
   const authUser = await resolveServerAuth()
@@ -12,94 +12,166 @@ async function authorizeUser(userId: string) {
 export async function getDashboardOverview(
   userId: string
 ): Promise<DashboardOverviewData> {
+  // 🔐 Auth must never crash dashboard
+  try {
+    await authorizeUser(userId);
+  } catch {
+    throw new Error("Unauthorized");
+  }
 
-  await authorizeUser(userId)
-
-  // 1️⃣ User
-  const user = await prisma.user.findUniqueOrThrow({
+  // ---------------------------
+  // 1️⃣ User (safe)
+  // ---------------------------
+  const user = await prisma.user.findUnique({
     where: { id: userId },
   });
 
-  // 2️⃣ Active investments + category
-  const investments = await prisma.investment.findMany({
-    where: {
-      userId,
-      status: InvestmentStatus.ACTIVE
-    },
-    include: {
-      category: true,
-      investorBalance: true,
-    },
-  });
+  if (!user) {
+    throw new Error("User not found");
+  }
 
-  // 3️⃣ Wallet (aggregated across investments)
-  const walletAgg = await prisma.investorBalance.aggregate({
-    where: {
-      investment: {
-        userId,
-      },
-    },
-    _sum: {
-      totalDeposited: true,
-      totalWithdrawn: true,
-      roiAccrued: true,
-      availableBalance: true,
-    },
-  });
+  // ---------------------------
+  // 2️⃣ Active investments (safe select)
+  // ---------------------------
+  let investments: any[] = [];
 
-  const walletStats = await prisma.investorBalance.findFirst({
-    where: {
-      investment: {
-        userId,
-      },
-    }
-  });
-
-  // 4️⃣ Transactions + pending aggregates (parallel)
-  const [
-    transactions,
-    pendingWithdrawalsAgg,
-    pendingDepositsAgg,
-  ] = await Promise.all([
-    prisma.transaction.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.transaction.aggregate({
+  try {
+    investments = await prisma.investment.findMany({
       where: {
         userId,
-        type: TransactionType.WITHDRAWAL,
-        status: TransactionStatus.PENDING,
+        status: InvestmentStatus.ACTIVE,
       },
-      _sum: { amount: true },
-    }),
-    prisma.transaction.aggregate({
-      where: {
-        userId,
-        type: TransactionType.DEPOSIT,
-        status: TransactionStatus.PENDING,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        category: true,
+        investorBalance: {
+          select: {
+            roiAccrued: true,
+            availableBalance: true,
+            principalLocked: true,
+          },
+        },
       },
-      _sum: { amount: true },
-    }),
-  ]);
+    });
+  } catch (err) {
+    console.error("Investment query failed:", err);
+    investments = [];
+  }
 
-  // 5️⃣ Pick category from first active investment (if any)
+  // ---------------------------
+  // 3️⃣ Wallet aggregation (fully guarded)
+  // ---------------------------
+  let walletAgg = {
+    totalDeposited: 0,
+    totalWithdrawn: 0,
+    roiAccrued: 0,
+    availableBalance: 0,
+  };
+
+  let walletStats: {
+    availableBalance: Prisma.Decimal | null;
+    principalLocked: Prisma.Decimal | null;
+  } | null = null;
+
+  try {
+    const agg = await prisma.investorBalance.aggregate({
+      where: {
+        investment: { userId },
+      },
+      _sum: {
+        totalDeposited: true,
+        totalWithdrawn: true,
+        roiAccrued: true,
+        availableBalance: true,
+      },
+    });
+
+    walletAgg = {
+      totalDeposited: Number(agg._sum.totalDeposited ?? 0),
+      totalWithdrawn: Number(agg._sum.totalWithdrawn ?? 0),
+      roiAccrued: Number(agg._sum.roiAccrued ?? 0),
+      availableBalance: Number(agg._sum.availableBalance ?? 0),
+    };
+
+    walletStats = await prisma.investorBalance.findFirst({
+      where: {
+        investment: { userId },
+      },
+      select: {
+        availableBalance: true,
+        principalLocked: true,
+      },
+    });
+  } catch (err) {
+    console.error("Wallet aggregation failed:", err);
+  }
+
+  // ---------------------------
+  // 4️⃣ Transactions (parallel + safe)
+  // ---------------------------
+  let transactions: any[] = [];
+  let pendingWithdrawals = 0;
+  let pendingDeposits = 0;
+
+  try {
+    const [
+      txs,
+      pendingWithdrawalsAgg,
+      pendingDepositsAgg,
+    ] = await Promise.all([
+      prisma.transaction.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.transaction.aggregate({
+        where: {
+          userId,
+          type: TransactionType.WITHDRAWAL,
+          status: TransactionStatus.PENDING,
+        },
+        _sum: { amount: true },
+      }),
+      prisma.transaction.aggregate({
+        where: {
+          userId,
+          type: TransactionType.DEPOSIT,
+          status: TransactionStatus.PENDING,
+        },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    transactions = txs;
+    pendingWithdrawals = Number(pendingWithdrawalsAgg._sum.amount ?? 0);
+    pendingDeposits = Number(pendingDepositsAgg._sum.amount ?? 0);
+  } catch (err) {
+    console.error("Transaction queries failed:", err);
+  }
+
+  // ---------------------------
+  // 5️⃣ Category (safe)
+  // ---------------------------
   const category =
     investments.length > 0 ? investments[0].category : null;
 
+  // ---------------------------
+  // ✅ Final safe response
+  // ---------------------------
   return {
     user: mapUserToDto(user),
 
     category: category ? mapCategoryToDto(category) : null,
 
     wallet: {
-      totalDeposits: Number(walletAgg._sum.totalDeposited ?? 0),
-      totalWithdrawals: Number(walletAgg._sum.totalWithdrawn ?? 0),
-      totalInterest: Number(walletAgg._sum.roiAccrued ?? 0),
+      totalDeposits: walletAgg.totalDeposited,
+      totalWithdrawals: walletAgg.totalWithdrawn,
+      totalInterest: walletAgg.roiAccrued,
       availableBalance: Number(walletStats?.availableBalance ?? 0),
       principalBalance: Number(walletStats?.principalLocked ?? 0),
-      pendingWithdrawals: Number(pendingWithdrawalsAgg._sum.amount ?? 0),
-      pendingDeposits: Number(pendingDepositsAgg._sum.amount ?? 0),
+      pendingWithdrawals,
+      pendingDeposits,
     },
 
     activeInvestments: investments.map(inv =>
@@ -114,6 +186,7 @@ export async function getDashboardOverview(
       .map(mapTransactionToDto),
   };
 }
+
 
 export async function getAllInvestmentCategory(): Promise<
   ApiResponse<CategoryDto[]>

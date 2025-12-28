@@ -5,6 +5,6 @@ export const dashboardNavItems: NavLinks[] = [
   { title: "Overview", href: "/dashboard", icon: Home },
   { title: "Investments", href: "/dashboard/investments", icon: Activity },
   { title: "Transactions", href: "/dashboard/transactions", icon: CreditCard },
-  { title: "Wallet", href: "/dashboard/wallet", icon: Wallet },
+  // { title: "Wallet", href: "/dashboard/wallet", icon: Wallet },
   // { title: "Upgrade Tier", href: "/dashboard/upgrade-tier", icon: Star },
 ];
