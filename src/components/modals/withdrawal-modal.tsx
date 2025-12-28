@@ -78,8 +78,8 @@ export function WithdrawalModal({
   const earlyWithdrawal = form.watch("earlyWithdrawal") || false;
 
   // Calculate available withdrawal amounts
-  const withdrawableBalance = availableBalance - principalLocked; // Balance after removing locked principal
-  const interestEarned = availableBalance - principalLocked; // Interest earned so far
+  // const withdrawableBalance = availableBalance - principalLocked; // Balance after removing locked principal
+  const interestEarned = availableBalance; // Interest earned so far
   
   // Calculate early withdrawal penalty (25% of principal amount withdrawn)
   const earlyWithdrawalPenaltyRate = 0.25;
@@ -90,7 +90,7 @@ export function WithdrawalModal({
     : 0;
   
   const earlyWithdrawalPenalty = earlyWithdrawal && principalBeingWithdrawn > 0
-    ? principalBeingWithdrawn * earlyWithdrawalPenaltyRate
+    ? amount * earlyWithdrawalPenaltyRate
     : 0;
   
   const netAmountAfterPenalty = amount - earlyWithdrawalPenalty;
@@ -100,11 +100,11 @@ export function WithdrawalModal({
     if (earlyWithdrawal) {
       // For early withdrawal: availableBalance only (principal + interest)
       // User can withdraw up to availableBalance with penalty
-      return availableBalance;
+      return (principalLocked + availableBalance);
     } else {
       // For regular withdrawal: only interest earned (availableBalance - principalLocked)
       // Or if principal is locked, use withdrawableBalance
-      return Math.max(0, availableBalance - principalLocked);
+      return Math.max(0, availableBalance);
     }
   };
 
@@ -180,6 +180,8 @@ export function WithdrawalModal({
 
     return formAction(formData);
   };
+
+  console.log(form.formState.errors)
 
   return (
     <Modal
@@ -453,7 +455,7 @@ export function WithdrawalModal({
                             disabled={isPending}
                             className="bg-white border-wg-primary/20 focus:border-wg-secondary focus:ring-wg-secondary/20 pl-8"
                             onChange={(e) => {
-                              const value = e.target.value;
+                              const value = parseFloat(e.target.value);
                               field.onChange(value);
                             }}
                             min={MIN_WITHDRAWAL}
@@ -536,6 +538,7 @@ export function WithdrawalModal({
                     type="submit"
                     disabled={
                       isPending ||
+                      !!amountError ||
                       amount < MIN_WITHDRAWAL
                     }
                     className="flex-1 min-h-[40px] bg-gradient-to-r from-wg-primary to-wg-secondary hover:from-wg-primary/90 hover:to-wg-secondary/90 text-white shadow-lg hover:shadow-xl transition-all"

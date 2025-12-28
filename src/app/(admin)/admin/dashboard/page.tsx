@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
-import { getServerAdmin, getServerAdminId } from "@/lib/server/auth0-server";
 import { getAdminDashboardOverview } from "@/services/admin/r.service";
 import AdminDashboardClient from "../_components/AdminDashboardClient";
 import { AdminDashboardOverview } from "@/types/adminType";
+import { getServerUserId } from "@/lib/server/auth0-server";
 
 export const metadata: Metadata = {
   title: "Admin Dashboard | Water Groove",
@@ -34,7 +34,7 @@ export default async function DashboardPage() {
 
   try {
     // Get Auth0 user on server side
-    const adminId = await getServerAdminId();
+    const adminId = await getServerUserId();
 
     // Fetch dashboard data with timeout
     try {

@@ -1,23 +1,16 @@
-import { redirect } from "next/navigation";
-import { createUserFromAuth0 } from "@/lib/server/createUserFromAuth0";
-import AdminDashboardShell from "./_components/AdminDashboardShell";
-import { auth0 } from "@/lib/server/auth0";
-import { getServerAdmin } from "@/lib/server/auth0-server";
+import AdminDashboardShell from './_components/AdminDashboardShell';
+import { requireAdmin } from '@/lib/auth/guards';
 
-export default async function DashboardLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const admin = await getServerAdmin();
+  const { user } = await requireAdmin();
 
-  // 🔒 Block unauthenticated users
-  if (!admin) {
-    redirect("/auth/login");
-  }
-
-  // 👤 Ensure user exists in DB
-  // await createUserFromAuth0(session.user);
-
-  return <AdminDashboardShell admin={admin}>{children}</AdminDashboardShell>;
+  return (
+    <AdminDashboardShell admin={user}>
+      {children}
+    </AdminDashboardShell>
+  );
 }

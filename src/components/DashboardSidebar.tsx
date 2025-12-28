@@ -66,7 +66,7 @@ export function DashboardSidebar({
   };
 
   return (
-    <div className="flex h-screen flex-col fixed bg-wg-neutral border-r border-wg-accent">
+    <div className="flex h-screen w-64 lg:w-72 flex-col fixed bg-wg-neutral border-r border-wg-accent">
       {/* Logo */}
       <div className="px-6 py-5">
         <Link href="/dashboard" className="flex items-center gap-3">
@@ -185,7 +185,7 @@ export function DashboardSidebar({
             {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className="flex items-center justify-center rounded-sm p-2 bg-wg-primary/10 text-sm text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+              className="flex items-center justify-center rounded-sm p-2 bg-wg-primary/10 text-sm text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
             </button>

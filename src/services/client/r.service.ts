@@ -195,17 +195,39 @@ export async function getTransactions(
       orderBy,
       skip,
       take: limit,
+      select: {
+        id: true,
+        userId: true,
+        investmentId: true,
+        type: true,
+        status: true,
+        amount: true,
+        proofUrl: true,
+        description: true,
+        processedAt: true,
+        createdAt: true,
+        earlyWithdrawal: true,
+        withdrawalPenalty: {
+          select: {
+            id: true,
+            amount: true,
+            percentage: true,
+          },
+        },
+      },
     }),
     prisma.transaction.count({ where }),
   ]);
 
   const totalPages = Math.ceil(total / limit);
 
+  const txns = transactions.map(mapTransactionToAdminRow);
+
   return {
     success: true,
     message: "Transactions retrieved successfully",
     data: {
-      transactions: transactions.map(mapTransactionToAdminRow),
+      transactions: txns,
       total,
       page,
       limit,

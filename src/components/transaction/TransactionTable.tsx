@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Eye, FileText, Download } from "lucide-react";
 import { AdminTransactionRow } from "@/types/adminType";
-import { TransactionStatus } from "@prisma/client";
+import { TransactionStatus, TransactionType } from "@prisma/client";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface TransactionTableProps {
@@ -29,7 +29,7 @@ interface TransactionTableProps {
   onDownloadProof: (transaction: AdminTransactionRow) => void;
   onAction: (
     transaction: AdminTransactionRow,
-    action:  "APPROVE" | "REJECT" | "PAID"
+    action: "APPROVE" | "REJECT" | "PAID"
   ) => void;
   isAdmin?: boolean;
 }
@@ -157,8 +157,17 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                 <TableCell className="text-wg-primary/80">
                   {transaction.userId}
                 </TableCell>
-                <TableCell className="text-wg-primary font-medium">
-                  {formatCurrency(transaction.amount)}
+                <TableCell className="text-wg-primary font-medium flex-col">
+                  {formatCurrency(transaction.amount)} <br />
+                  {transaction.type === TransactionType.WITHDRAWAL &&
+                    transaction.earlyWithdrawal && (
+                      <span className="bg-wg-secondary/20 border border-wg-secondary text-wg-primary text-[10px] px-2 py-0.5 rounded-full">
+                        {transaction.withdrawalPenalty?.percentage}% penalty{" "}
+                        {formatCurrency(
+                          transaction?.withdrawalPenalty?.amount!
+                        )}
+                      </span>
+                    )}
                 </TableCell>
                 <TableCell className="text-wg-primary/80 capitalize">
                   {transaction.type.toLowerCase()}
@@ -229,7 +238,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({
                                 <span className="mr-2">✗</span>
                                 Reject
                               </DropdownMenuItem>
-                               <DropdownMenuItem
+                              <DropdownMenuItem
                                 onClick={() => onAction(transaction, "PAID")}
                                 className="text-blue-400 hover:bg-blue-500/20 cursor-pointer"
                               >

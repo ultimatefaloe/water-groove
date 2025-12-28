@@ -21,14 +21,17 @@ import {
   Clock,
   Banknote,
 } from "lucide-react";
-import { TransactionStatus } from "@prisma/client";
+import { TransactionStatus, TransactionType } from "@prisma/client";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface TransactionDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   transaction: AdminTransactionRow | null;
-  onAction: (transaction: AdminTransactionRow, action: "APPROVE" | "REJECT") => void;
+  onAction: (
+    transaction: AdminTransactionRow,
+    action: "APPROVE" | "REJECT"
+  ) => void;
   isAdmin?: boolean;
 }
 
@@ -88,7 +91,7 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({
     }
   };
 
-  const statusConfig =  getStatusConfig(transaction.status);
+  const statusConfig = getStatusConfig(transaction.status);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -111,9 +114,23 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({
               {transaction.type.toLowerCase()} Transaction
             </span>
           </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-wg-primary/60 capitalize">
+              {formatCurrency(transaction.amount)} <br />
+            </span>
+            <Badge variant="outline">
+              {transaction.type === TransactionType.WITHDRAWAL &&
+                transaction.earlyWithdrawal && (
+                  <span className="bg-wg-secondary/20 border border-wg-secondary text-wg-primary text-[10px] px-2 py-0.5 rounded-full">
+                    {transaction.withdrawalPenalty?.percentage}% penalty for early withdrawal (Inmature Investment){" "}
+                    {formatCurrency(transaction?.withdrawalPenalty?.amount!)}
+                  </span>
+                )}
+            </Badge>
+            
+          </div>
 
           <Separator className="bg-wg-accent/20" />
-
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -136,7 +153,6 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({
               </p>
             </div>
           </div>
-
           {/* Dates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -161,7 +177,6 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({
               </div>
             )}
           </div>
-
           {/* Investment ID */}
           {transaction.investmentId && (
             <div className="space-y-2">
@@ -171,7 +186,6 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({
               </p>
             </div>
           )}
-
           {/* Description */}
           {transaction.description && (
             <div className="space-y-2">
@@ -184,7 +198,6 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({
               </p>
             </div>
           )}
-
           {/* Proof URL */}
           {transaction.proofUrl && (
             <div className="space-y-2">

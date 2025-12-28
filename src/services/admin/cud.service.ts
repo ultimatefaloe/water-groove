@@ -1,11 +1,18 @@
 import { prisma } from "@/lib/prisma"
+import { getServerUserId } from "@/lib/server/auth0-server";
 import { ApiResponse, InvestmenCrontDto } from "@/types/type"
 import { InvestmentStatus, TransactionStatus, TransactionType } from "@prisma/client";
 
+async function authorizeAdmin(adminId: string) {
+  const authAdmin = await getServerUserId()
+  if (authAdmin !== adminId) throw new Error("Unauthorized")
+}
 
 //Deposit
 export async function approveDeposit(txnId: string, adminId: string): Promise<ApiResponse<null>> {
-  if (!adminId || !txnId) return {
+  await authorizeAdmin(adminId)
+
+  if (!txnId) return {
     success: false, message: "adminId or txnId is missing", data: null
   }
   const now = new Date();
@@ -63,7 +70,9 @@ export async function approveDeposit(txnId: string, adminId: string): Promise<Ap
 }
 
 export async function rejectDeposit(txnId: string, adminId: string): Promise<ApiResponse<null>> {
-  if (!adminId || !txnId) return {
+  await authorizeAdmin(adminId)
+
+  if (txnId) return {
     success: false, message: "adminId or txnId is missing", data: null
   }
   try {
@@ -97,8 +106,9 @@ export async function approveWithdrawal(
   txnId: string,
   adminId: string
 ): Promise<ApiResponse<null>> {
+  await authorizeAdmin(adminId)
 
-  if (!adminId || !txnId) {
+  if (!txnId) {
     return {
       success: false,
       message: "adminId or txnId is missing",
@@ -115,12 +125,12 @@ export async function approveWithdrawal(
       });
 
       if (!txn) throw new Error("Transaction not found");
-      if (txn.status === TransactionStatus.PAID)
-        throw new Error("Transaction already paid");
+      if (txn.status === TransactionStatus.APPROVED)
+        throw new Error("Transaction already processed");
       if (!txn.investmentId)
         throw new Error("Transaction has no investment linked");
 
-      // 2️⃣ Fetch balance
+      // 2️⃣ Fetch investor balance
       const balance = await tx.investorBalance.findUnique({
         where: { investmentId: txn.investmentId },
       });
@@ -128,55 +138,95 @@ export async function approveWithdrawal(
       if (!balance) throw new Error("Investor balance not found");
 
       const withdrawalAmount = Number(txn.amount);
-      let available = Number(balance.availableBalance);
-      let locked = Number(balance.principalLocked);
+      const available = Number(balance.availableBalance);
+      const locked = Number(balance.principalLocked);
+
+      if (withdrawalAmount <= 0) {
+        throw new Error("Invalid withdrawal amount");
+      }
 
       // 3️⃣ Validate funds
-      const maxWithdrawable = txn.earlyWithdrawal
-        ? available + locked
-        : available;
-
-      if (withdrawalAmount > maxWithdrawable) {
-        throw new Error("Insufficient balance for withdrawal");
+      if (!txn.earlyWithdrawal && withdrawalAmount > available) {
+        throw new Error("Insufficient available balance");
       }
 
-      // 4️⃣ Compute deductions
-      let newAvailable = available;
-      let newLocked = locked;
+      if (
+        txn.earlyWithdrawal &&
+        withdrawalAmount > available + locked
+      ) {
+        throw new Error("Insufficient total balance for early withdrawal");
+      }
 
-      if (txn.earlyWithdrawal) {
-        const penalty = locked * 0.25;
-        const unlocked = locked - penalty;
+      // 4️⃣ Penalty computation
+      const penaltyPercentage = txn.earlyWithdrawal ? 25 : 0;
+      const penaltyAmount = txn.earlyWithdrawal
+        ? withdrawalAmount * 0.25
+        : 0;
 
-        newAvailable = available + unlocked - withdrawalAmount;
-        newLocked = 0;
+      const netPayout = withdrawalAmount - penaltyAmount;
+
+      if (netPayout <= 0) {
+        throw new Error("Withdrawal amount too small after penalty");
+      }
+
+      // 5️⃣ Balance computation
+      let newAvailableBalance = available;
+      let newPrincipalLocked = locked;
+
+      if (withdrawalAmount <= available) {
+        // Withdraw fully from available balance
+        newAvailableBalance = available - withdrawalAmount;
       } else {
-        newAvailable = available - withdrawalAmount;
+        // Early withdrawal using principal
+        const remaining = withdrawalAmount - available;
+        newAvailableBalance = 0;
+        newPrincipalLocked = locked - remaining;
       }
 
-      if (newAvailable < 0) {
-        throw new Error("Invalid balance computation");
-      }
-
-      // 5️⃣ Update balance (ABSOLUTE values only)
+      // 6️⃣ Persist balance updates
       await tx.investorBalance.update({
         where: { investmentId: txn.investmentId },
         data: {
-          availableBalance: newAvailable,
-          principalLocked: newLocked,
+          availableBalance: newAvailableBalance,
+          principalLocked: newPrincipalLocked,
           totalWithdrawn: {
             increment: withdrawalAmount,
           },
+          updatedAt: new Date()
         },
       });
 
-      // 6️⃣ Mark transaction PAID
+      // 7️⃣ Save penalty record if applicable
+      if (penaltyAmount > 0) {
+        await tx.withdrawalPenalty.create({
+          data: {
+            transactionId: txn.id,
+            percentage: penaltyPercentage,
+            amount: penaltyAmount,
+            reason: "Early withdrawal before investment maturity",
+            appliedByAdminId: adminId,
+            createdAt: new Date()
+          },
+        });
+        await tx.investment.update({
+          where: {
+            id: balance.investmentId
+          },
+          data: {
+            principalAmount: { decrement: withdrawalAmount },
+            updatedAt: new Date()
+          }
+        })
+      }
+
+      // 8️⃣ Mark transaction approved
       await tx.transaction.update({
         where: { id: txnId },
         data: {
-          status: TransactionStatus.PAID,
+          status: TransactionStatus.APPROVED,
           processedByAdminId: adminId,
           processedAt: new Date(),
+          updatedAt: new Date()
         },
       });
     });
@@ -199,7 +249,9 @@ export async function approveWithdrawal(
 
 
 export async function rejectWithdrawal(txnId: string, adminId: string): Promise<ApiResponse<null>> {
-  if (!adminId || !txnId) return {
+  await authorizeAdmin(adminId)
+
+  if (!txnId) return {
     success: false, message: "adminId or txnId is missing", data: null
   }
   try {
@@ -229,7 +281,9 @@ export async function rejectWithdrawal(txnId: string, adminId: string): Promise<
 }
 
 export async function paidWithdrawal(txnId: string, adminId: string): Promise<ApiResponse<null>> {
-  if (!adminId || !txnId) return {
+  await authorizeAdmin(adminId)
+
+  if (!txnId) return {
     success: false, message: "adminId or txnId is missing", data: null
   }
   try {
@@ -264,7 +318,8 @@ export async function updateInvestment(
   status: InvestmentStatus,
   adminId: string
 ): Promise<ApiResponse<null>> {
-  if (!adminId || !ivst) {
+  await authorizeAdmin(adminId)
+  if (!ivst) {
     return {
       success: false,
       message: "adminId or investmentId is missing",
