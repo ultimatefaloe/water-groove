@@ -1,13 +1,13 @@
-import { Metadata } from 'next'
-import React from 'react'
-
+import { Metadata } from 'next';
+import React from 'react';
+import PrivacyPolicyClient from './_components/PrivacyPolicyClient';
 
 export const metadata: Metadata = {
   title: "Privacy Policy | WG"
 }
 const PrivacyPolicy = () => {
   return (
-    <div>Privacy Policy</div>
+    <PrivacyPolicyClient />
   )
 }
 

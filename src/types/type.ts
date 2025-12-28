@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { InvestorTier, TransactionStatus, TransactionType, AdminRole, InvestmentStatus } from "@prisma/client"
 import { AdminTransactionRow } from "./adminType"
@@ -30,6 +31,31 @@ export interface ApiError {
   errors?: Record<string, string[]>
 }
 
+// ==============================
+// PAGINATION
+// ==============================
+
+export interface PaginatedResponse<T> {
+  unreadMessages: number
+  data: T
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
+export interface PaginatedResponseWithMetadata<T> extends PaginatedResponse<T> {
+  metadata?: {
+    [key: string]: any
+  }
+}
+
+// ==============================
+// USER & ADMIN TYPES
+// ==============================
+
 export interface UserDto {
   id: string
   fullName: string
@@ -49,6 +75,10 @@ export interface AdminDto {
   lastLoginAt?: string
 }
 
+// ==============================
+// INVESTMENT TYPES
+// ==============================
+
 export interface InvestmentCategoryDto {
   id: string
   name: string
@@ -61,43 +91,44 @@ export interface InvestmentCategoryDto {
   createdAt: string
 }
 
+export interface InvestmentDto {
+  id: string
+  userId: string
+  categoryId: string
+  principalAmount: number
+  roiRateSnapshot: number
+  durationMonths: number
+  status: InvestmentStatus
+  startDate?: string
+  endDate?: string
+  createdAt: string
+}
+
 export interface InvestmentWithCategoryDto extends InvestmentDto {
   category: CategoryDto
   totalInterestEarned: number
 }
 
-
-export interface InvestmentDto {
-  id: string
-  userId: string
-  categoryId: string
-
-  principalAmount: number
-  roiRateSnapshot: number
-  durationMonths: number
-
-  status: InvestmentStatus
-  startDate?: string
-  endDate?: string
-
-  createdAt: string
-}
+// ==============================
+// TRANSACTION TYPES
+// ==============================
 
 export interface TransactionDto {
   id: string
   userId: string
   investmentId?: string
-
   type: TransactionType
   status: TransactionStatus
   amount: number
-
   proofUrl?: string
   description?: string
-
   processedAt?: string
   createdAt: string
 }
+
+// ==============================
+// WALLET & BALANCE TYPES
+// ==============================
 
 export interface WalletSummaryDto {
   totalDeposits: number
@@ -109,7 +140,22 @@ export interface WalletSummaryDto {
   pendingDeposits: number
 }
 
-//Dashboard
+export interface InvestorBalanceDto {
+  id: string
+  principalLocked: number
+  roiAccrued: number
+  totalDeposited: number
+  totalWithdrawn: number
+  availableBalance: number
+  lastComputedAt: Date
+  createdAt: Date
+  updatedAt: Date
+}
+
+// ==============================
+// DASHBOARD TYPES
+// ==============================
+
 export interface DashboardOverviewData {
   user: UserDto
   category?: CategoryDto | null
@@ -119,12 +165,14 @@ export interface DashboardOverviewData {
   nextRoiDate?: string
 }
 
-//Investment
+// ==============================
+// PAGE DATA TYPES
+// ==============================
+
 export interface InvestmentsPageData {
   investments: InvestmentWithCategoryDto[]
 }
 
-//InvestmentDetail
 export interface InvestmentDetailData {
   investment: InvestmentWithCategoryDto
   transactions: TransactionDto[]
@@ -139,12 +187,20 @@ export interface WalletPageData {
   recentTransactions: TransactionDto[]
 }
 
+// ==============================
+// UPGRADE TIER TYPES
+// ==============================
+
 export interface UpgradeTierData {
   currentTier: InvestorTier
   eligibleForUpgrade: boolean
   nextTier?: InvestorTier
   requiredDeposit?: number
 }
+
+// ==============================
+// PAYLOAD TYPES
+// ==============================
 
 export interface CreateDepositPayload {
   amount: number
@@ -175,23 +231,15 @@ export interface ManualRoiPayload {
   note?: string
 }
 
-export interface DashboardLayoutProps {
-  user: UserDto
-  wallet: WalletSummaryDto
-  children: React.ReactNode
-}
+// ==============================
+// BANK & PAYMENT TYPES
+// ==============================
 
 export interface BankDetails {
   bankName: string
   accountNumber: string
   accountHolderName: string
   reference?: string
-}
-
-export interface CreateDeposit {
-  investmentCatId: string,
-  amount: number,
-  description: string,
 }
 
 export interface WithdrawalRequestDto {
@@ -202,6 +250,10 @@ export interface WithdrawalRequestDto {
   reference?: string
   earlyWithdrawal?: boolean
 }
+
+// ==============================
+// CATEGORY TYPES
+// ==============================
 
 export interface CategoryDto {
   id?: string
@@ -217,6 +269,10 @@ export interface CategoryDto {
   createdAt?: string
 }
 
+// ==============================
+// TRANSACTION FILTER TYPES
+// ==============================
+
 export interface TransactionFilter {
   type?: TransactionType
   status?: TransactionStatus
@@ -226,6 +282,31 @@ export interface TransactionFilter {
   limit?: number
   search?: string // Optional search term for description/ID
 }
+
+export interface TransactionQueryParams {
+  type?: TransactionType
+  status?: TransactionStatus
+  from?: string
+  to?: string
+  page?: number
+  limit?: number
+  sortBy?: 'date' | 'amount' | 'type' // Optional sorting
+  sortOrder?: 'asc' | 'desc' // Optional sort order
+}
+
+export interface TransactionFilterState {
+  type: TransactionType | 'ALL'
+  status: TransactionStatus | 'ALL'
+  dateRange: {
+    from?: Date
+    to?: Date
+  }
+  searchTerm: string
+}
+
+// ==============================
+// TRANSACTION RESPONSE TYPES
+// ==============================
 
 export interface TransactionResponse {
   transactions: AdminTransactionRow[]
@@ -264,30 +345,10 @@ export interface PaginatedTransactionResponse {
   }
 }
 
-// Query parameters interface for API requests
-export interface TransactionQueryParams {
-  type?: TransactionType
-  status?: TransactionStatus
-  from?: string
-  to?: string
-  page?: number
-  limit?: number
-  sortBy?: 'date' | 'amount' | 'type' // Optional sorting
-  sortOrder?: 'asc' | 'desc' // Optional sort order
-}
+// ==============================
+// FILTER OPTIONS & SUMMARY
+// ==============================
 
-// Filter state for UI components
-export interface TransactionFilterState {
-  type: TransactionType | 'ALL'
-  status: TransactionStatus | 'ALL'
-  dateRange: {
-    from?: Date
-    to?: Date
-  }
-  searchTerm: string
-}
-
-// Option types for UI dropdowns
 export interface TransactionFilterOptions {
   typeOptions: Array<{
     value: TransactionType | 'ALL'
@@ -301,7 +362,6 @@ export interface TransactionFilterOptions {
   }>
 }
 
-// Summary statistics
 export interface TransactionSummary {
   totalTransactions: number
   totalAmount: number
@@ -322,17 +382,9 @@ export interface TransactionSummary {
   statusBreakdown: Record<TransactionStatus, number>
 }
 
-export interface InvestorBalanceDto {
-  id: string
-  principalLocked: number
-  roiAccrued: number
-  totalDeposited: number
-  totalWithdrawn: number
-  availableBalance: number
-  lastComputedAt: Date
-  createdAt: Date
-  updatedAt: Date
-}
+// ==============================
+// INVESTMENT CRONT TYPES
+// ==============================
 
 export interface InvestmenCrontDto {
   id: string
@@ -349,7 +401,11 @@ export interface InvestmenCrontDto {
   createdAt: string
   investorBalance: InvestorBalanceDto
 }
-// types/type.ts
+
+// ==============================
+// AUTH TYPES
+// ==============================
+
 export interface Auth0User {
   name?: string | null;
   nickname?: string | null;
@@ -367,4 +423,24 @@ export interface AuthData {
     email: string;
     role?: string;
   } | null;
+}
+
+// ==============================
+// LAYOUT & COMPONENT PROPS
+// ==============================
+
+export interface DashboardLayoutProps {
+  user: UserDto
+  wallet: WalletSummaryDto
+  children: React.ReactNode
+}
+
+// ==============================
+// DEPRECATED / LEGACY TYPES
+// ==============================
+
+export interface CreateDeposit {
+  investmentCatId: string,
+  amount: number,
+  description: string,
 }

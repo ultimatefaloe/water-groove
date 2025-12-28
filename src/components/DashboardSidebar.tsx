@@ -35,11 +35,7 @@ const secondaryNavItems: NavLinks[] = [
     href: "/dashboard/support",
     icon: Headset,
   },
-  {
-    title: "Help Center",
-    href: "/dashboard/help",
-    icon: HelpCircle,
-  },
+  
 ];
 
 export function DashboardSidebar({
