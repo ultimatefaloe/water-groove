@@ -1,6 +1,6 @@
 import { InvestmentStatus, TransactionStatus, TransactionType } from '@prisma/client';
 import { NextResponse } from "next/server";
-import { getServerAdminId } from '@/lib/server/auth0-server';
+import { resolveServerAuth } from '@/lib/server/auth0-server';
 import { AdminInvestmentQueryParams } from '@/types/adminType';
 import { getAllInvestments } from '@/services/admin/r.service';
 
@@ -10,7 +10,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const adminId = await getServerAdminId()
+    const resolved = await resolveServerAuth();
+    const adminId = resolved?.user?.id
 
     const query: AdminInvestmentQueryParams = {
       status: (searchParams.get("status") as InvestmentStatus) ?? undefined,

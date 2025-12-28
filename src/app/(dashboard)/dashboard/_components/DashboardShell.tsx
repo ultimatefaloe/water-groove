@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { dashboardNavItems } from "@/config/navigations";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { useUser } from "@auth0/nextjs-auth0";
+import { AuthData } from "@/types/type";
 
 interface Props {
   children: React.ReactNode;
@@ -16,7 +18,19 @@ interface Props {
 export default function DashboardShell({ children }: Props) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-
+  const { user, error, isLoading } = useUser();
+  const authData: AuthData = {
+    isLoading,
+    error: error?.message || (error ? String(error) : undefined),
+    user: user
+      ? {
+          name: user.name || user.nickname || user.email || "User",
+          picture: user.picture,
+          email: user.email || "",
+          role: (user as any).role || "user", // Cast to any if Auth0 user has custom properties
+        }
+      : undefined,
+  };
   const pageTitle =
     dashboardNavItems.find((i) => pathname === i.href)?.title ?? "Dashboard";
 
@@ -28,6 +42,7 @@ export default function DashboardShell({ children }: Props) {
           pathname={pathname}
           onNavigate={() => {}}
           navItem={dashboardNavItems}
+          authUser={authData}
         />
       </aside>
 
@@ -38,6 +53,7 @@ export default function DashboardShell({ children }: Props) {
             pathname={pathname}
             onNavigate={() => setMobileOpen(false)}
             navItem={dashboardNavItems}
+            authUser={authData}
           />
         </SheetContent>
       </Sheet>

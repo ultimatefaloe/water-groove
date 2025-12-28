@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { getInvestments } from "@/services/client/r.service";
-import { getServerUserId } from "@/lib/server/auth0-server";
+import { resolveServerAuth } from "@/lib/server/auth0-server";
 import InvestmentClient from "../_components/InvestmentClient";
 
 export const metadata: Metadata = {
@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 const Transactions = async () => {
 
-  const userId = await getServerUserId();
-  const res = await getInvestments(userId);
+  const {user} = await resolveServerAuth();
+  const res = await getInvestments(user.id);
 
   const data = res?.data ?? []
 

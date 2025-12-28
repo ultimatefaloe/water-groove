@@ -28,6 +28,8 @@ export type WithdrawalActionState = {
   message?: string;
   data?: {
     reference: string
+    penaltyAmount?: number;
+    netAmount?: number;
   }
 };
 
@@ -142,7 +144,8 @@ export async function withdrawaRequestAction(
     bankName: formData.get("bankName") as string,
     accountHolderName: formData.get("accountHolderName") as string,
     accountNumber: formData.get("accountNumber") as string,
-    amount: Number(formData.get("amount")),
+    amount: Number(formData.get("amount")) as number,
+    earlyWithdrawal: Boolean(formData.get('earlyWithdrawal'))
   };
 
   // Validate the data with schema

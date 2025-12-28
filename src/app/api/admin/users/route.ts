@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerAdminId } from '@/lib/server/auth0-server';
+import { resolveServerAuth } from '@/lib/server/auth0-server';
 import { AdminUserQueryParams } from '@/types/adminType';
 import { getAllUsers } from '@/services/admin/r.service';
 
@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const adminId = await getServerAdminId()
+    const resolved = await resolveServerAuth();
+    const adminId = resolved?.user?.id
 
     const query: AdminUserQueryParams = {
       page: Number(searchParams.get("page")) ?? undefined,

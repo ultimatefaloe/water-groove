@@ -49,6 +49,7 @@ export const withdrawalFormSchema = z.object({
     .string()
     .regex(/^\d{10}$/, "Account number must be 10 digits"),
   amount: z.number().min(1, "Amount must be greater than 0"),
+  earlyWithdrawal: z.boolean().default(false),
   reference: z.string().optional(),
 });
 

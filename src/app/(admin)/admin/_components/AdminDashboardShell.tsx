@@ -8,14 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { adminNavItems } from "@/config/navigations";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { Auth0User, AuthData } from "@/types/type";
 
 interface Props {
   children: React.ReactNode;
+  admin: Auth0User;
 }
 
-export default function AdminDashboardShell({ children }: Props) {
+export default function AdminDashboardShell({ children, admin }: Props) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const authData: AuthData = {
+    isLoading: false,
+    error: undefined,
+    user: admin
+      ? {
+          name: admin.name || admin.nickname || admin.email || "User",
+          picture: admin.picture || undefined,
+          email: admin.email || "",
+          role: (admin as any).role || "admin", // Cast to any if Auth0 admin has custom properties
+        }
+      : undefined,
+  };
 
   const pageTitle =
     adminNavItems.find((i) => pathname === i.href)?.title ?? "Dashboard";
@@ -24,7 +39,12 @@ export default function AdminDashboardShell({ children }: Props) {
     <div className="flex min-h-screen bg-white">
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden md:flex w-64 lg:w-72">
-        <DashboardSidebar pathname={pathname} onNavigate={() => {}} navItem={adminNavItems}/>
+        <DashboardSidebar
+          pathname={pathname}
+          onNavigate={() => {}}
+          navItem={adminNavItems}
+          authUser={authData}
+        />
       </aside>
 
       {/* MOBILE SIDEBAR */}
@@ -34,6 +54,7 @@ export default function AdminDashboardShell({ children }: Props) {
             pathname={pathname}
             onNavigate={() => setMobileOpen(false)}
             navItem={adminNavItems}
+            authUser={authData}
           />
         </SheetContent>
       </Sheet>

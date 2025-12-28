@@ -1,6 +1,5 @@
 import Navbar from "@/components/NavBar";
 import { Footer } from "@/components/Footer";
-import { ToastContainer } from "react-toastify";
 
 export default function RootLayout({
   children,
@@ -9,7 +8,6 @@ export default function RootLayout({
 }) {
   return (
     <>
-      <ToastContainer />
       <Navbar />
       <main className="min-h-screen pb-16 md:pb-0">{children}</main>
       <Footer />

@@ -1,21 +1,21 @@
 import prisma from "@/lib/prisma"
 import { Prisma, TransactionStatus, TransactionType } from "@prisma/client"
-import { AdminDashboardOverview, AdminUserQueryParams, AdminUserRow, AdminInvestmentQueryParams, AdminInvestmentRow, AdminTransactionQueryParams, AdminTransactionRow, PaginatedResponse } from "@/types/adminType"
+import { AdminDashboardOverview, AdminUserQueryParams, AdminUserRow, AdminInvestmentQueryParams, AdminInvestmentRow, AdminTransactionQueryParams, AdminTransactionRow, PaginatedResponse, AdminPenaltiesQueryParams, AdminPenaltyRow } from "@/types/adminType"
 import { ApiResponse } from "@/types/type"
 import { buildDateFilter, buildOrder, buildPaginationMeta, paginate } from "@/lib/utils"
-import { getServerAdminId } from "@/lib/server/auth0-server"
-import { mapInvestmentToAdminRow, mapTransactionToAdminRow, mapUserToAdminRow } from "@/utils/mapper"
+import { resolveServerAuth } from "@/lib/server/auth0-server"
+import { mapInvestmentToAdminRow, mapPeneltyToAdminRow, mapTransactionToAdminRow, mapUserToAdminRow } from "@/utils/mapper"
 
 async function authorizeAdmin(adminId: string) {
-  const authAdmin = await getServerAdminId()
-  if (authAdmin !== adminId) throw new Error("Unauthorized")
+  const authAdmin = await resolveServerAuth()
+  if (authAdmin.user.id !== adminId) throw new Error("Unauthorized")
 }
+
 export async function getTransactions(
   adminId: string,
   type: TransactionType,
   params: AdminTransactionQueryParams & { page?: number; limit?: number }
 ) {
-  console.log(adminId)
   await authorizeAdmin(adminId)
 
   let page = params.page ?? 1
@@ -45,13 +45,21 @@ export async function getTransactions(
         proofUrl: true,
         description: true,
         processedAt: true,
-        createdAt: true
-      }
-    })
-  ])
-  console.log(transactions)
-  const txns = transactions.map(mapTransactionToAdminRow)
-  console.log(txns)
+        createdAt: true,
+        earlyWithdrawal: true,
+        withdrawalPenalty: {
+          select: {
+            id: true,
+            amount: true,
+            percentage: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  const txns = transactions.map(mapTransactionToAdminRow);
+
 
   return {
     success: true,
@@ -61,8 +69,6 @@ export async function getTransactions(
     }
   }
 }
-
-
 
 export async function getAllInvestments(
   adminId: string,
@@ -116,7 +122,6 @@ export async function getAllInvestments(
     return { success: false, message: error.message }
   }
 }
-
 
 export async function getAllUsers(
   adminId: string,
@@ -175,14 +180,12 @@ export async function getAllUsers(
   }
 }
 
-
-
 export async function getAdminDashboardOverview(
   adminId: string
 ): Promise<ApiResponse<AdminDashboardOverview | null>> {
   try {
-    const authAdmin = await getServerAdminId()
-    if (authAdmin !== adminId) throw new Error("Unauthorized")
+    
+   await authorizeAdmin(adminId)
 
     const [
       users,
@@ -266,6 +269,39 @@ export async function getAdminDashboardOverview(
   }
 }
 
-// getTransactions(adminId, TransactionType.WITHDRAWAL, params)
-// getTransactions(adminId, TransactionType.DEPOSIT, params)
-// getTransactions(adminId, TransactionType.INTEREST, params)
+export async function getAllPenaties(
+  adminId: string,
+  params: AdminPenaltiesQueryParams & { page?: number; limit?: number }
+): Promise<ApiResponse<PaginatedResponse<AdminPenaltyRow[]>>> {
+  try {
+    await authorizeAdmin(adminId)
+
+    const page = params.page ?? 1
+    const limit = params.limit ?? 20
+
+    const where = {
+      ...(params.transactionId && { transactionId: params.transactionId }),
+    }
+
+    const [total, penaties] = await prisma.$transaction([
+      prisma.withdrawalPenalty.count({ where }),
+      prisma.withdrawalPenalty.findMany({
+        where,
+        orderBy: buildOrder(params.order),
+        skip: (page - 1) * limit,
+        take: limit,
+      })
+    ])
+
+    return {
+      success: true,
+      data: {
+        data: penaties.map(mapPeneltyToAdminRow),
+        ...buildPaginationMeta(total, page, limit)
+      }
+    }
+  } catch (error: any) {
+    console.error(error)
+    return { success: false, message: error.message }
+  }
+}

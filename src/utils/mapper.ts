@@ -1,11 +1,12 @@
 import { prisma } from '@/lib/prisma';
-import { Admin, Investment,InvestorBalance, InvestmentCategory, PlatformBankAccount, Transaction, User } from "@prisma/client"
+import { Admin, Investment, InvestorBalance, InvestmentCategory, PlatformBankAccount, Transaction, User } from "@prisma/client"
 import { Prisma } from "@prisma/client"
-import { AdminDto, BankDetails, InvestmenCrontDto,InvestorBalanceDto, CategoryDto, InvestmentDto, InvestmentWithCategoryDto, TransactionDto, UserDto } from "@/types/type"
+import { AdminDto, BankDetails, InvestmenCrontDto, InvestorBalanceDto, CategoryDto, InvestmentDto, InvestmentWithCategoryDto, TransactionDto, UserDto } from "@/types/type"
 import {
   AdminTransactionRow,
   AdminInvestmentRow,
-  AdminUserRow
+  AdminUserRow,
+  AdminPenaltyRow
 } from "@/types/adminType"
 
 export const decimalToNumber = (
@@ -172,13 +173,23 @@ export const adminTransactionSelect = {
   proofUrl: true,
   description: true,
   processedAt: true,
-  createdAt: true
+  createdAt: true,
+  earlyWithdrawal: true,
+  withdrawalPenalty: {
+    select: {
+      id: true,
+      amount: true,
+      percentage: true,
+    },
+  },
 } satisfies Prisma.TransactionSelect
+
 
 export type AdminTransactionSelected =
   Prisma.TransactionGetPayload<{
     select: typeof adminTransactionSelect
   }>
+
 
 export function mapTransactionToAdminRow(
   tx: AdminTransactionSelected
@@ -191,11 +202,23 @@ export function mapTransactionToAdminRow(
     status: tx.status,
     amount: Number(tx.amount),
     proofUrl: tx.proofUrl ?? undefined,
+    earlyWithdrawal: tx.earlyWithdrawal,
     description: tx.description ?? undefined,
     processedAt: tx.processedAt ?? undefined,
-    createdAt: tx.createdAt
+    createdAt: tx.createdAt,
+
+    withdrawalPenalty:
+      tx.earlyWithdrawal && tx.withdrawalPenalty
+        ? {
+            id: tx.withdrawalPenalty.id,
+            amount: Number(tx.withdrawalPenalty.amount),
+            percentage: Number(tx.withdrawalPenalty.percentage),
+          }
+        : undefined,
   }
 }
+
+
 
 /* ---------------- INVESTMENT ---------------- */
 export const adminInvestmentSelect = {
@@ -260,5 +283,34 @@ export function mapUserToAdminRow(
     isActive: user.isActive,
     investmentCategoryId: user.investmentCategoryId ?? "",
     createdAt: user.createdAt
+  }
+}
+
+
+/* ---------------- Penaty ---------------- */
+
+const adminPenaltySelect = {
+  id: true,
+  transactionId: true,
+  percentage: true,
+  amount: true,
+  reason: true,
+  createdAt: true,
+} satisfies Prisma.WithdrawalPenaltySelect
+
+type AdminPenaltySelect = Prisma.WithdrawalPenaltyGetPayload<{
+  select: typeof adminPenaltySelect
+}>
+
+export function mapPeneltyToAdminRow(
+  penalty: AdminPenaltySelect
+): AdminPenaltyRow {
+  return {
+    id: penalty.id,
+    transactionId: penalty.transactionId,
+    percentage: Number(penalty.percentage),
+    amount: Number(penalty.amount),
+    reason: penalty.reason ?? "",
+    createdAt: penalty.createdAt
   }
 }

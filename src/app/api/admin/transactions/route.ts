@@ -1,8 +1,9 @@
 import { TransactionStatus, TransactionType } from '@prisma/client';
 import { NextResponse } from "next/server";
-import { getServerAdminId } from '@/lib/server/auth0-server';
+import { resolveServerAuth } from '@/lib/server/auth0-server';
 import { AdminTransactionQueryParams } from '@/types/adminType';
 import { getTransactions } from '@/services/admin/r.service';
+import { approveDeposit } from '@/services/admin/cud.service';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +11,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const adminId = await getServerAdminId()
+    const resolved = await resolveServerAuth();
+    const adminId = resolved?.user?.id
 
     const query: AdminTransactionQueryParams = {
       status: (searchParams.get("status") as TransactionStatus) ?? undefined,
@@ -22,7 +24,7 @@ export async function GET(req: Request) {
       type: searchParams.get("type")?.toUpperCase() as TransactionType ?? undefined,
     };
 
-    if(!query.type)
+    if (!query.type)
       throw new Error('Transaction type is not provided')
 
     const res = await getTransactions(adminId, query?.type, query)

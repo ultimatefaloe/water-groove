@@ -43,7 +43,7 @@ import {
 import { InvestmentStatus, Prisma } from "@prisma/client";
 import InvestmentTable from "@/components/investment/InvestmentTable";
 import InvestmentDetailsModal from "@/components/investment/InvestmentDetailsModal";
-import { formatCurrency } from "@/lib/utils";
+import { calculateROI, formatCurrency } from "@/lib/utils";
 import { ApiResponse } from "@/types/type";
 import { DateRange } from "react-day-picker";
 import {
@@ -54,6 +54,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { toast } from "react-toastify";
 
 interface InvestmentClientProps {
   initialInvestments: AdminInvestmentRow[];
@@ -267,7 +268,12 @@ const InvestmentClient: React.FC<InvestmentClientProps> = ({
       0
     );
     const totalReturns = investments.reduce(
-      (sum, inv) => sum + (inv.roiRateSnapshot || 0),
+      (sum, inv) =>
+        sum +
+        (inv.status === InvestmentStatus.ACTIVE
+          ? (inv.principalAmount * inv.roiRateSnapshot * inv.durationMonths) /
+            12
+          : 0),
       0
     );
 
@@ -333,17 +339,34 @@ const InvestmentClient: React.FC<InvestmentClientProps> = ({
       // Update local state for demo
       let newStatus: InvestmentStatus;
       switch (action) {
-        case "ACTIVATE":
+        case "ACTIVE":
           newStatus = InvestmentStatus.ACTIVE;
           break;
-        case "COMPLETE":
+        case "PAUSED":
+          newStatus = InvestmentStatus.PAUSED;
+          break;
+        case "COMPLETED":
           newStatus = InvestmentStatus.COMPLETED;
           break;
-        case "CANCEL":
+        case "CANCELLED":
           newStatus = InvestmentStatus.CANCELLED;
+          break;
+        case "REJECTED":
+          newStatus = InvestmentStatus.REJECTED;
           break;
         default:
           newStatus = investment.status;
+      }
+
+      const res = await fetch(
+        `/api/admin/investments/${investment.id}/status`,
+        { method: "PATCH", body: JSON.stringify({ status: newStatus }) }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        return toast.error(result.message || "Failed to update transaction");
       }
 
       setInvestments((prev) =>
@@ -354,7 +377,7 @@ const InvestmentClient: React.FC<InvestmentClientProps> = ({
         )
       );
 
-      alert(
+      toast.success(
         `Investment ${investment.id} ${action.toLowerCase()}d successfully`
       );
     } catch (error) {
@@ -397,7 +420,7 @@ const InvestmentClient: React.FC<InvestmentClientProps> = ({
         />
         <StatsCard
           title="Total Returns"
-          value={formatCurrency(stats.totalReturns)}
+          value={stats.totalReturns}
           description="Sum of all returns"
           icon={
             <div className="p-2 rounded-full bg-green-500/10">

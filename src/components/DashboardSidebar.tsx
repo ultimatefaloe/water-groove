@@ -15,11 +15,13 @@ import { NavLinks } from "@/types/nav";
 import { useRouter } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Image from "next/image";
+import { AuthData } from "@/types/type";
 
 interface SidebarProps {
   pathname: string;
   onNavigate: () => void;
-  navItem: NavLinks[]
+  navItem: NavLinks[];
+  authUser: AuthData;
 }
 
 const secondaryNavItems: NavLinks[] = [
@@ -40,10 +42,15 @@ const secondaryNavItems: NavLinks[] = [
   },
 ];
 
-export function DashboardSidebar({ pathname, onNavigate, navItem }: SidebarProps) {
+export function DashboardSidebar({
+  pathname,
+  onNavigate,
+  navItem,
+  authUser,
+}: SidebarProps) {
   const router = useRouter();
 
-  const { user, error, isLoading } = useUser();
+  const { user, error, isLoading } = authUser;
 
   const handleLogout = () => {
     router.push("/auth/logout");
@@ -59,7 +66,7 @@ export function DashboardSidebar({ pathname, onNavigate, navItem }: SidebarProps
   };
 
   return (
-    <div className="flex h-screen flex-col fixed bg-wg-neutral border-r border-wg-accent">
+    <div className="flex h-screen w-64 lg:w-72 flex-col fixed bg-wg-neutral border-r border-wg-accent">
       {/* Logo */}
       <div className="px-6 py-5">
         <Link href="/dashboard" className="flex items-center gap-3">
@@ -98,7 +105,6 @@ export function DashboardSidebar({ pathname, onNavigate, navItem }: SidebarProps
 
       {/* Secondary Section */}
       <div className="overflow-y-auto px-3 py-4">
-
         {/* Secondary Navigation */}
         <nav className="space-y-1">
           {secondaryNavItems.map((item) => {
@@ -113,9 +119,9 @@ export function DashboardSidebar({ pathname, onNavigate, navItem }: SidebarProps
                 className={clsx(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
                   isActive
-                  ? "bg-wg-primary text-wg-secondary"
-                  : "text-wg-primary hover:bg-wg-secondary/50 hover:text-wg-primary"
-              )}
+                    ? "bg-wg-primary text-wg-secondary"
+                    : "text-wg-primary hover:bg-wg-secondary/50 hover:text-wg-primary"
+                )}
               >
                 {Icon && <Icon className="h-4 w-4" />}
                 <span className="font-medium">{item.title}</span>
@@ -159,6 +165,11 @@ export function DashboardSidebar({ pathname, onNavigate, navItem }: SidebarProps
                   <p className="text-xs text-sidebar-foreground/60 truncate">
                     {user.email}
                   </p>
+                  {user.role && (
+                    <p className="text-xs font-bold text-wg-accent truncate">
+                      {user.role}
+                    </p>
+                  )}
                 </>
               ) : (
                 <>
@@ -174,7 +185,7 @@ export function DashboardSidebar({ pathname, onNavigate, navItem }: SidebarProps
             {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className="flex items-center justify-center rounded-sm p-2 bg-wg-primary/10 text-sm text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+              className="flex items-center justify-center rounded-sm p-2 bg-wg-primary/10 text-sm text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
             </button>

@@ -86,9 +86,28 @@ export interface AdminTransactionRow {
 
   proofUrl?: string
   description?: string
-
+  earlyWithdrawal: boolean;
   processedAt?: Date
   createdAt: Date
+
+  withdrawalPenalty?: WithdrawalPenaltyRow
+}
+
+export interface AdminPenaltyRow {
+  id: string
+  transactionId: string
+  percentage: number
+  amount: number
+  reason: string
+  createdAt: Date
+}
+
+export interface WithdrawalPenaltyRow {
+  id: string
+  amount: number
+  percentage: number
+  reason?: string
+  transactionId?: string
 }
 
 export interface ApproveTransactionPayload {
@@ -191,6 +210,13 @@ export interface AdminUserQueryParams {
   email?: string
   isActive?: boolean
   investmentCategoryId?: string
+  page?: number
+  limit?: number
+}
+
+export interface AdminPenaltiesQueryParams {
+  transactionId?: string
+  order?: Prisma.SortOrder
   page?: number
   limit?: number
 }

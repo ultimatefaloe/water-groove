@@ -1,22 +1,11 @@
-import { redirect } from "next/navigation";
-import { createUserFromAuth0 } from "@/lib/server/createUserFromAuth0";
-import DashboardShell from "./dashboard/_components/DashboardShell";
-import { auth0 } from "@/lib/server/auth0";
+import DashboardShell from './dashboard/_components/DashboardShell';
+import { requireUser } from '@/lib/auth/guards';
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth0.getSession();
-
-  // 🔒 Block unauthenticated users
-  if (!session?.user) {
-    redirect("/auth/login");
-  }
-
-  // 👤 Ensure user exists in DB
-  await createUserFromAuth0(session.user);
-
+  await requireUser();
   return <DashboardShell>{children}</DashboardShell>;
 }

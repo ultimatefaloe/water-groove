@@ -61,6 +61,7 @@ async function main() {
 
   await prisma.admin.create({
     data:{
+      auth_Id: "google-auth0|26477294829489",
       fullName: "Ultimate Faloe",
       email: "ultimatefaloe@gmail.com",
       passwordHash: "y812^@YF^V&GYGgyy662t737fgy^TT@^fdf666"

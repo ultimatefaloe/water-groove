@@ -10,7 +10,8 @@ import {
 } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Upload, Copy, Check, AlertCircle, X } from "lucide-react";
+import { Upload, Copy, Check, AlertCircle, X, Info, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import { Modal } from "@/components/ui/modal";
 import { FormStepProgress } from "@/components/forms/form-step-progress";
@@ -55,6 +56,7 @@ interface DepositModalProps {
   isOpen: boolean;
   onClose: () => void;
   investmentCategories: CategoryDto[];
+  availableBalance?: number;
 }
 
 interface FormState {
@@ -67,6 +69,7 @@ export function DepositModal({
   isOpen,
   onClose,
   investmentCategories,
+  availableBalance = 0,
 }: DepositModalProps) {
   // Zustand store for step persistence only
   const {
@@ -119,6 +122,14 @@ export function DepositModal({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Format amount for display
+  const formatAmount = (amount: number) => {
+    return `₦${amount.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
   // Initialize forms
   const depositForm = useForm<DepositFormValues>({
     resolver: zodResolver(depositFormSchema as any),
@@ -130,7 +141,7 @@ export function DepositModal({
   });
 
   const proofForm = useForm<ProofUploadFormValues>({
-    resolver: zodResolver(proofUploadSchema as any),
+    resolver: zodResolver(proofUploadSchema),
     defaultValues: {
       proofFile: undefined,
     },
@@ -153,22 +164,21 @@ export function DepositModal({
     }
   }, [state, setBankDetails, setCompletedSteps, setCurrentStep]);
 
-  // Handle server response for bank details
+  // Handle server response for proof upload
   useEffect(() => {
     if (proofState.success) {
-      setCompletedSteps([3]);
+      setCompletedSteps([1, 2, 3]);
       setCurrentStep(4);
     }
   }, [proofState, setCompletedSteps, setCurrentStep]);
 
-
   // Display error in a toast/alert
   useEffect(() => {
-    if (state.error) {
+    if (state.error || proofState.error) {
       // Scroll to top to show error
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [state.error]);
+  }, [state.error, proofState.error]);
 
   // Warn user about unsaved changes
   useEffect(() => {
@@ -188,10 +198,10 @@ export function DepositModal({
   }, [isOpen, hasUnsavedProgress, currentStep]);
 
   const steps = [
-    { id: 1, label: "Fill Form", description: "Enter deposit details" },
-    { id: 2, label: "Bank Details", description: "Send payment" },
-    { id: 3, label: "Upload Proof", description: "Upload receipt" },
-    { id: 4, label: "Pending", description: "Awaiting confirmation" },
+    { id: 1, label: "Deposit Details", description: "Enter deposit information" },
+    { id: 2, label: "Make Payment", description: "Transfer funds to bank account" },
+    { id: 3, label: "Upload Proof", description: "Upload payment receipt" },
+    { id: 4, label: "Confirmation", description: "Awaiting verification" },
   ];
 
   const handleDepositSubmit = (data: DepositFormValues) => {
@@ -320,41 +330,66 @@ export function DepositModal({
         isOpen={isOpen}
         onClose={handleClose}
         title="Make a Deposit"
-        description="Complete the following steps to deposit funds into your investment account."
-        className="w-full max-w-[95%] sm:max-w-[520px] md:max-w-[600px] lg:max-w-[680px]"
+        description="Fund your investment account in 3 simple steps"
+        className="w-full max-w-[95%] sm:max-w-[500px] md:max-w-[580px]"
         disableClose={hasUnsavedProgress() && currentStep < 4}
+        showCloseButton={!hasUnsavedProgress() || currentStep === 4}
       >
         <div className="px-1 sm:px-0">
-          {/* Global Error Display - Only at top */}
-          {state?.error || proofState.error && (
-              <Alert
-                variant="destructive"
-                className="mb-5 animate-in slide-in-from-top duration-300 bg-red-500/20 border border-red-500 rounded-lg"
-              >
-                <X className="h-4 w-4 text-red-500"/>
-                <AlertDescription className="text-sm text-red-500">
-                  {state.error || proofState.error}
-                </AlertDescription>
-              </Alert>
-            )}
+          {/* Balance Summary */}
+          {availableBalance > 0 && (
+            <div className="mb-5 p-4 sm:p-5 bg-gradient-to-r from-wg-primary/10 to-wg-secondary/5 rounded-lg border border-wg-primary/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-wg-primary font-medium">
+                    Current Balance
+                  </p>
+                  <p className="text-xl sm:text-2xl font-bold text-wg-secondary">
+                    {formatAmount(availableBalance)}
+                  </p>
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className="border-wg-primary/30 text-wg-primary bg-white"
+                >
+                  Available
+                </Badge>
+              </div>
+            </div>
+          )}
+
+          {/* Global Error Display */}
+          {(state?.error || proofState.error) && (
+            <Alert
+              variant="destructive"
+              className="mb-4 animate-in slide-in-from-top duration-300"
+            >
+              <X className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                {state.error || proofState.error}
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Progress Saved Alert */}
           {completedSteps.length > 0 && currentStep < 4 && !state?.error && (
-            <Alert className="mb-5 bg-green-50 border-green-200">
+            <Alert className="mb-4 bg-green-50 border-green-200">
               <Check className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-700 text-sm">
-                Your progress is saved. You can safely close this window and
-                return later.
+                Your progress is saved. You can safely close this window and return later.
               </AlertDescription>
             </Alert>
           )}
 
           {/* Policy Alert */}
-          <Alert className="mb-5 bg-blue-50 border-blue-200">
-            <AlertCircle className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-700 text-sm leading-relaxed">
-              <strong>Important:</strong> Ensure all deposit details are
-              accurate. Deposits are processed within 24–48 hours.
+          <Alert className="mb-5 bg-wg-primary/5 border-wg-primary/20">
+            <Info className="h-4 w-4 text-wg-primary" />
+            <AlertDescription className="text-wg-primary text-sm leading-relaxed">
+              <strong className="font-semibold">Important:</strong>{" "}
+              Ensure all deposit details are accurate. Deposits are processed within 24–48 hours.
+              <span className="block mt-1">
+                <strong>Minimum Deposit:</strong> ₦100,000
+              </span>
             </AlertDescription>
           </Alert>
 
@@ -380,28 +415,29 @@ export function DepositModal({
                   name="investmentCatId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Investment Category</FormLabel>
+                      <FormLabel className="text-wg-primary font-medium">Investment Category</FormLabel>
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
                         disabled={isPending}
                       >
                         <FormControl>
-                          <SelectTrigger className="w-full">
+                          <SelectTrigger className="w-full bg-white border-wg-primary/20 focus:border-wg-secondary focus:ring-wg-secondary/20">
                             <SelectValue placeholder="Select investment category" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="bg-white border-wg-primary/20">
                           {investmentCategories.map((investment) => (
                             <SelectItem
                               key={investment.id}
                               value={investment?.code}
+                              className="focus:bg-wg-primary/5"
                             >
                               <div className="flex flex-col">
-                                <span className="font-medium">
+                                <span className="font-medium text-wg-primary">
                                   {investment.name}
                                 </span>
-                                <span className="text-xs text-muted-foreground truncate">
+                                <span className="text-xs text-wg-primary/70 truncate">
                                   {investment.description}
                                 </span>
                               </div>
@@ -420,22 +456,28 @@ export function DepositModal({
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Amount (₦)</FormLabel>
+                      <FormLabel className="text-wg-primary font-medium">Amount (₦)</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Enter amount"
-                          inputMode="numeric"
-                          min="100000"
-                          step="1000"
-                          disabled={isPending}
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                          }}
-                        />
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            placeholder="Enter amount"
+                            inputMode="numeric"
+                            min="100000"
+                            step="1000"
+                            disabled={isPending}
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                            }}
+                            className="bg-white border-wg-primary/20 focus:border-wg-secondary focus:ring-wg-secondary/20 pl-8"
+                          />
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-wg-primary/60 font-medium">
+                            ₦
+                          </div>
+                        </div>
                       </FormControl>
-                      <FormDescription className="text-xs">
+                      <FormDescription className="text-xs text-wg-primary/70">
                         Minimum deposit: ₦100,000
                       </FormDescription>
                       <FormMessage />
@@ -449,17 +491,17 @@ export function DepositModal({
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
+                      <FormLabel className="text-wg-primary font-medium">Description (Optional)</FormLabel>
                       <FormControl>
                         <Textarea
                           {...field}
                           placeholder="Enter deposit purpose or reference"
-                          className="resize-none min-h-[90px]"
-                          disabled={ isPending}
+                          className="resize-none min-h-[90px] bg-white border-wg-primary/20 focus:border-wg-secondary focus:ring-wg-secondary/20"
+                          disabled={isPending}
                         />
                       </FormControl>
-                      <FormDescription className="text-xs">
-                        Optional notes or reference
+                      <FormDescription className="text-xs text-wg-primary/70">
+                        Add notes or reference for this deposit
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -472,19 +514,19 @@ export function DepositModal({
                     type="button"
                     variant="outline"
                     onClick={handleClose}
-                    className="flex-1"
-                    disabled={ isPending}
+                    className="flex-1 border-wg-primary/30 text-wg-primary hover:bg-wg-primary/5 hover:border-wg-primary/50"
+                    disabled={isPending}
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
-                    disabled={ isPending}
-                    className="flex-1"
+                    disabled={isPending}
+                    className="flex-1 min-h-[40px] bg-gradient-to-r from-wg-primary to-wg-secondary hover:from-wg-primary/90 hover:to-wg-secondary/90 text-white shadow-lg hover:shadow-xl transition-all"
                   >
-                    { isPending ? (
+                    {isPending ? (
                       <>
-                        <span className="animate-spin mr-2">⟳</span>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Processing...
                       </>
                     ) : (
@@ -499,10 +541,10 @@ export function DepositModal({
           {/* STEP 2: Bank Details */}
           {currentStep === 2 && localBankDetails && (
             <div className="space-y-6">
-              <Alert className="bg-green-50 border-green-200">
+              <Alert className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+                <Check className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-700 text-sm">
-                  Transfer the exact amount using the reference below. Your
-                  progress is saved.
+                  Transfer the exact amount using the reference below. Your progress is saved.
                 </AlertDescription>
               </Alert>
 
@@ -521,11 +563,11 @@ export function DepositModal({
                     },
                   ].map((item) => (
                     <div key={item.key} className="space-y-1">
-                      <label className="text-sm font-medium">
+                      <label className="text-sm font-medium text-wg-primary">
                         {item.label}
                       </label>
-                      <div className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-gray-50">
-                        <span className="truncate font-medium text-sm">
+                      <div className="flex items-center justify-between gap-3 p-3 border border-wg-primary/20 rounded-lg bg-wg-primary/5">
+                        <span className="truncate font-medium text-sm text-wg-primary">
                           {item.value}
                         </span>
                         <Button
@@ -534,12 +576,12 @@ export function DepositModal({
                           onClick={() =>
                             handleCopyToClipboard(item.value, item.key)
                           }
-                          className="shrink-0"
+                          className="shrink-0 hover:bg-wg-primary/10"
                         >
                           {copiedField === item.key ? (
                             <Check className="h-4 w-4 text-green-600" />
                           ) : (
-                            <Copy className="h-4 w-4" />
+                            <Copy className="h-4 w-4 text-wg-primary" />
                           )}
                         </Button>
                       </div>
@@ -549,9 +591,9 @@ export function DepositModal({
 
                 {/* Account Name */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Account Name</label>
-                  <div className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-gray-50">
-                    <span className="truncate font-medium text-sm">
+                  <label className="text-sm font-medium text-wg-primary">Account Name</label>
+                  <div className="flex items-center justify-between gap-3 p-3 border border-wg-primary/20 rounded-lg bg-wg-primary/5">
+                    <span className="truncate font-medium text-sm text-wg-primary">
                       {localBankDetails.accountHolderName}
                     </span>
                     <Button
@@ -563,12 +605,12 @@ export function DepositModal({
                           "accountHolderName"
                         )
                       }
-                      className="shrink-0"
+                      className="shrink-0 hover:bg-wg-primary/10"
                     >
                       {copiedField === "accountHolderName" ? (
                         <Check className="h-4 w-4 text-green-600" />
                       ) : (
-                        <Copy className="h-4 w-4" />
+                        <Copy className="h-4 w-4 text-wg-primary" />
                       )}
                     </Button>
                   </div>
@@ -576,9 +618,9 @@ export function DepositModal({
 
                 {/* Reference */}
                 <div className="space-y-1">
-                  <label className="text-sm font-medium">Reference</label>
-                  <div className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-blue-50">
-                    <span className="font-mono text-sm truncate">
+                  <label className="text-sm font-medium text-wg-primary">Reference</label>
+                  <div className="flex items-center justify-between gap-3 p-3 border border-wg-secondary/30 rounded-lg bg-gradient-to-r from-wg-secondary/5 to-wg-primary/5">
+                    <span className="font-mono text-sm truncate text-wg-secondary">
                       {localBankDetails.reference}
                     </span>
                     <Button
@@ -590,40 +632,42 @@ export function DepositModal({
                           "reference"
                         )
                       }
-                      className="shrink-0"
+                      className="shrink-0 hover:bg-wg-secondary/10"
                     >
                       {copiedField === "reference" ? (
                         <Check className="h-4 w-4 text-green-600" />
                       ) : (
-                        <Copy className="h-4 w-4" />
+                        <Copy className="h-4 w-4 text-wg-secondary" />
                       )}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Include this reference in your transfer. Required for
-                    verification.
+                  <p className="text-xs text-wg-primary/70 mt-2">
+                    <Info className="h-3 w-3 inline mr-1" />
+                    Include this reference in your transfer. Required for verification.
                   </p>
                 </div>
               </div>
 
-              <Separator />
+              <Separator className="border-wg-primary/10" />
 
               <div className="flex flex-col-reverse gap-3 sm:flex-row">
                 <Button
                   variant="outline"
                   onClick={handleBackToForm}
-                  className="flex-1"
+                  className="flex-1 border-wg-primary/30 text-wg-primary hover:bg-wg-primary/5 hover:border-wg-primary/50"
                 >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
                   Back
                 </Button>
                 <Button
-                  className="flex-1"
+                  className="flex-1 bg-gradient-to-r from-wg-primary to-wg-secondary hover:from-wg-primary/90 hover:to-wg-secondary/90 text-white shadow-lg hover:shadow-xl transition-all"
                   onClick={() => {
                     addCompletedStep(2);
                     setCurrentStep(3);
                   }}
                 >
                   I've Sent Payment
+                  <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -642,13 +686,20 @@ export function DepositModal({
                   name="proofFile"
                   render={({ field: { onChange, value, ...field } }) => (
                     <FormItem>
-                      <FormLabel>Proof of Payment</FormLabel>
-                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 sm:p-8 text-center">
-                        <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-sm font-medium mb-2">
+                      <FormLabel className="text-wg-primary font-medium">Proof of Payment</FormLabel>
+                      <div 
+                        onClick={() => !isProofPending && fileInputRef.current?.click()}
+                        className={cn(
+                          "border-2 border-dashed rounded-lg p-6 sm:p-8 text-center cursor-pointer transition-all",
+                          "border-wg-primary/20 hover:border-wg-secondary hover:bg-wg-primary/5",
+                          isProofPending && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        <Upload className="h-10 w-10 text-wg-primary/50 mx-auto mb-4" />
+                        <p className="text-sm font-medium text-wg-primary mb-2">
                           Upload your transfer receipt
                         </p>
-                        <p className="text-xs text-muted-foreground mb-4">
+                        <p className="text-xs text-wg-primary/60 mb-4">
                           Supported: JPG, PNG, PDF (Max 5MB)
                         </p>
                         <Input
@@ -671,27 +722,37 @@ export function DepositModal({
                               onChange(null);
                             }
                           }}
-                          className="cursor-pointer"
+                          className="hidden"
                           disabled={isProofPending}
                         />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="border-wg-primary/30 text-wg-primary hover:bg-wg-primary/5 hover:border-wg-primary/50"
+                          disabled={isProofPending}
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          Choose File
+                        </Button>
                       </div>
                       {value && (
-                        <div className="mt-4 p-3 border rounded-lg flex items-center justify-between">
+                        <div className="mt-4 p-3 border border-wg-primary/20 rounded-lg flex items-center justify-between bg-gradient-to-r from-wg-primary/5 to-transparent">
                           <div className="truncate">
-                            <p className="text-sm font-medium truncate">
+                            <p className="text-sm font-medium text-wg-primary truncate">
                               {value.name}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-wg-primary/60">
                               {(value.size / 1024).toFixed(2)} KB •{" "}
                               {value.type.split("/")[1].toUpperCase()}
                             </p>
                           </div>
-                          <Badge variant="outline">Uploaded</Badge>
+                          <Badge variant="outline" className="border-green-200 text-green-700 bg-green-50">
+                            Ready to Upload
+                          </Badge>
                         </div>
                       )}
-                      <FormDescription>
-                        Upload a clear screenshot or PDF of your bank transfer
-                        receipt.
+                      <FormDescription className="text-wg-primary/70">
+                        Upload a clear screenshot or PDF of your bank transfer receipt.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -703,19 +764,20 @@ export function DepositModal({
                     type="button"
                     variant="outline"
                     onClick={handleBackToForm}
-                    className="flex-1"
+                    className="flex-1 border-wg-primary/30 text-wg-primary hover:bg-wg-primary/5 hover:border-wg-primary/50"
                     disabled={isProofPending}
                   >
+                    <ChevronLeft className="mr-2 h-4 w-4" />
                     Back
                   </Button>
                   <Button
                     type="submit"
-                    disabled={ !proofForm.watch("proofFile")}
-                    className="flex-1"
+                    disabled={!proofForm.watch("proofFile") || isProofPending}
+                    className="flex-1 bg-gradient-to-r from-wg-primary to-wg-secondary hover:from-wg-primary/90 hover:to-wg-secondary/90 text-white shadow-lg hover:shadow-xl transition-all"
                   >
                     {isProofPending ? (
                       <>
-                        <span className="animate-spin mr-2">⟳</span>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Uploading...
                       </>
                     ) : (
@@ -729,34 +791,49 @@ export function DepositModal({
 
           {/* STEP 4: Pending Confirmation */}
           {currentStep === 4 && (
-            <div className="text-center py-8 space-y-4">
-              <div className="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center">
-                <Check className="h-8 w-8 text-green-600" />
+            <div className="text-center py-6 sm:py-8 space-y-4">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full bg-gradient-to-r from-green-100 to-green-50 flex items-center justify-center border-4 border-green-200">
+                <Check className="h-7 w-7 sm:h-8 sm:w-8 text-green-600" />
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold">
+                <h3 className="text-lg sm:text-xl font-semibold text-wg-primary">
                   Deposit Request Submitted
                 </h3>
-                <p className="text-muted-foreground mt-2">
-                  Your deposit is pending confirmation. We'll notify you once
-                  it's processed.
+                <p className="text-wg-primary/70 mt-2 text-sm sm:text-base">
+                  Your deposit is pending confirmation. We'll notify you once it's processed.
                 </p>
               </div>
 
-              <div className="space-y-2 text-sm">
-                <p className="font-medium">
-                  Reference: {localBankDetails?.reference}
-                </p>
-                <p className="text-muted-foreground">
-                  Processing time: 24-48 hours
-                </p>
+              <div className="space-y-3 p-4 bg-gradient-to-r from-wg-primary/5 to-wg-secondary/5 rounded-lg border border-wg-primary/20 text-left">
+                <div className="flex justify-between">
+                  <span className="text-wg-primary/70">Reference:</span>
+                  <span className="font-medium text-wg-primary font-mono">
+                    {localBankDetails?.reference}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-wg-primary/70">Amount:</span>
+                  <span className="font-medium">
+                    {formatAmount(depositData?.amount || 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-wg-primary/70">Status:</span>
+                  <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
+                    Pending Verification
+                  </Badge>
+                </div>
               </div>
+
+              <p className="text-sm text-wg-primary/60">
+                You'll receive a confirmation email shortly
+              </p>
 
               <div className="pt-6 space-y-3">
                 <Button
                   onClick={performClose}
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-wg-primary to-wg-secondary hover:from-wg-primary/90 hover:to-wg-secondary/90 text-white"
                   disabled={isProofPending}
                 >
                   {isProofPending ? "Closing..." : "Close"}
@@ -764,7 +841,7 @@ export function DepositModal({
                 <Button
                   variant="outline"
                   onClick={resetModal}
-                  className="w-full"
+                  className="w-full border-wg-primary/30 text-wg-primary hover:bg-wg-primary/5 hover:border-wg-primary/50"
                 >
                   Start New Deposit
                 </Button>
@@ -784,14 +861,14 @@ export function DepositModal({
           className="max-w-md"
         >
           <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              Your deposit progress is saved locally. You can continue later or
-              discard it now.
+            <p className="text-sm text-wg-primary/70">
+              Your deposit progress is saved locally. You can continue later or discard it now.
             </p>
             <div className="flex flex-col gap-3 pt-4">
               <Button
                 onClick={() => setShowUnsavedChangesAlert(false)}
                 variant="outline"
+                className="border-wg-primary/30 text-wg-primary hover:bg-wg-primary/5 hover:border-wg-primary/50"
               >
                 Continue Deposit
               </Button>
@@ -801,10 +878,14 @@ export function DepositModal({
                   performClose();
                 }}
                 variant="destructive"
+                className="bg-red-600 hover:bg-red-700"
               >
                 Discard & Close
               </Button>
-              <Button onClick={performClose}>
+              <Button 
+                onClick={performClose}
+                className="bg-gradient-to-r from-wg-primary to-wg-secondary hover:from-wg-primary/90 hover:to-wg-secondary/90 text-white"
+              >
                 Save & Close (Keep Progress)
               </Button>
             </div>
