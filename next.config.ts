@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    domains: ['images.pexels.com', 'media.istockphoto.com', "cdn.pixabay.com"],
     remotePatterns: [
       {
         protocol: "https",

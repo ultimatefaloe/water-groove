@@ -80,7 +80,7 @@ export default function DashboardClient({
       0
     );
 
-    const memberSince = new Date(user.createdAt);
+    const memberSince = new Date();
     const today = new Date();
     const daysActive = Math.floor(
       (today.getTime() - memberSince.getTime()) / (1000 * 60 * 60 * 24)
@@ -135,7 +135,7 @@ export default function DashboardClient({
               <div className="flex items-center gap-2">
                 <span className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
                   {viewBalance
-                    ? formatCurrency(wallet.currentBalance)
+                    ? formatCurrency(wallet.availableBalance)
                     : "₦ *******"}
                 </span>
                 <Button
@@ -150,6 +150,15 @@ export default function DashboardClient({
                     <EyeOff className="h-4 w-4" />
                   )}
                 </Button>
+              </div>
+
+              <div className="flex flex-col gap-1 text-[10px] text-blue-100">
+                <span>Principal</span>
+                <span className="text-xs md:text-sm font-bold text-white drop-shadow-sm">
+                  {viewBalance
+                    ? formatCurrency(wallet.principalBalance)
+                    : "₦ *******"}
+                </span>
               </div>
 
               {nextRoiDate && (
@@ -461,7 +470,11 @@ export default function DashboardClient({
                 </CardDescription>
               </div>
               <Link href="/dashboard/transactions">
-                <Button variant="default" size="sm" className="bg-wg-primary text-white hover:bg-wg-primary/50">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="bg-wg-primary text-white hover:bg-wg-primary/50"
+                >
                   View All
                 </Button>
               </Link>
@@ -481,7 +494,8 @@ export default function DashboardClient({
       <WithdrawalModal
         isOpen={showWithdrawalModal}
         onClose={() => setShowWithdrawalModal(false)}
-        availableBalance={wallet.currentBalance}
+        availableBalance={wallet.availableBalance}
+        principalLocked={wallet.principalBalance}
       />
 
       {category?.code && (

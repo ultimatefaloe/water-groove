@@ -1,11 +1,19 @@
 import { prisma } from "@/lib/prisma"
+import { resolveServerAuth } from "@/lib/server/auth0-server";
 import { DashboardOverviewData, CategoryDto, BankDetails, ApiResponse, TransactionResponse, TransactionQueryParams, InvestmentDto } from "@/types/type"
 import { mapCategoryToDto, mapInvestmentToDto, mapInvestmentWithCategoryToDto, mapTransactionToAdminRow, mapTransactionToDto, mapUserToDto } from '@/utils/mapper';
 import { InvestmentStatus, TransactionStatus, TransactionType } from "@prisma/client"
 
+async function authorizeUser(userId: string) {
+  const authUser = await resolveServerAuth()
+  if (authUser.user.id !== userId) throw new Error("Unauthorized")
+}
+
 export async function getDashboardOverview(
   userId: string
 ): Promise<DashboardOverviewData> {
+
+  await authorizeUser(userId)
 
   // 1️⃣ User
   const user = await prisma.user.findUniqueOrThrow({
@@ -37,6 +45,14 @@ export async function getDashboardOverview(
       roiAccrued: true,
       availableBalance: true,
     },
+  });
+
+  const walletStats = await prisma.investorBalance.findFirst({
+    where: {
+      investment: {
+        userId,
+      },
+    }
   });
 
   // 4️⃣ Transactions + pending aggregates (parallel)
@@ -80,7 +96,8 @@ export async function getDashboardOverview(
       totalDeposits: Number(walletAgg._sum.totalDeposited ?? 0),
       totalWithdrawals: Number(walletAgg._sum.totalWithdrawn ?? 0),
       totalInterest: Number(walletAgg._sum.roiAccrued ?? 0),
-      currentBalance: Number(walletAgg._sum.availableBalance ?? 0),
+      availableBalance: Number(walletStats?.availableBalance ?? 0),
+      principalBalance: Number(walletStats?.principalLocked ?? 0),
       pendingWithdrawals: Number(pendingWithdrawalsAgg._sum.amount ?? 0),
       pendingDeposits: Number(pendingDepositsAgg._sum.amount ?? 0),
     },
@@ -98,8 +115,6 @@ export async function getDashboardOverview(
   };
 }
 
-
-
 export async function getAllInvestmentCategory(): Promise<
   ApiResponse<CategoryDto[]>
 > {
@@ -109,28 +124,6 @@ export async function getAllInvestmentCategory(): Promise<
     success: true,
     message: "Investment categories retrieved successfully",
     data: ic.map(mapCategoryToDto)
-  }
-}
-
-export async function getInvestmentCategory(
-  id: string
-): Promise<ApiResponse<CategoryDto | null>> {
-  const ic = await prisma.investmentCategory.findUnique({
-    where: { id }
-  })
-
-  if (!ic) {
-    return {
-      success: false,
-      message: "Failed to fetch data",
-      data: null,
-    }
-  }
-
-  return {
-    success: true,
-    message: "Investment category retrieved successfully",
-    data: mapCategoryToDto(ic),
   }
 }
 
@@ -158,6 +151,9 @@ export async function getTransactions(
   userId: string,
   query?: TransactionQueryParams
 ): Promise<ApiResponse<TransactionResponse>> {
+
+  await authorizeUser(userId)
+
   const page = Math.max(Number(query?.page) || 1, 1);
   const limit = Math.min(Number(query?.limit) || 20, 100);
   const skip = (page - 1) * limit;
@@ -186,17 +182,39 @@ export async function getTransactions(
       orderBy,
       skip,
       take: limit,
+      select: {
+        id: true,
+        userId: true,
+        investmentId: true,
+        type: true,
+        status: true,
+        amount: true,
+        proofUrl: true,
+        description: true,
+        processedAt: true,
+        createdAt: true,
+        earlyWithdrawal: true,
+        withdrawalPenalty: {
+          select: {
+            id: true,
+            amount: true,
+            percentage: true,
+          },
+        },
+      },
     }),
     prisma.transaction.count({ where }),
   ]);
 
   const totalPages = Math.ceil(total / limit);
 
+  const txns = transactions.map(mapTransactionToAdminRow);
+
   return {
     success: true,
     message: "Transactions retrieved successfully",
     data: {
-      transactions: transactions.map(mapTransactionToAdminRow),
+      transactions: txns,
       total,
       page,
       limit,
@@ -210,8 +228,8 @@ export async function getTransactions(
 export async function getInvestments(
   userId: string,
 ): Promise<ApiResponse<InvestmentDto[] | null>> {
-
   try {
+    await authorizeUser(userId)
     const ivst = await prisma.investment.findMany({
       where: {
         userId: userId

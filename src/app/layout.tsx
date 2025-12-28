@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
+import { ToastContainer } from "react-toastify";
 import "./globals.css";
 
 const roboto = Roboto({
-  weight: '400',
-  subsets: ['latin'],
-  display: 'swap',
-})
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Welcome to Water Groove",
@@ -21,7 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${roboto.className} antialiased`}>{children}</body>
+      <body className={`${roboto.className} antialiased`}>
+        <ToastContainer />
+        {children}
+      </body>
     </html>
   );
 }

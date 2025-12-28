@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { ApiResponse, TransactionQueryParams, TransactionResponse } from "@/types/type";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -65,6 +65,11 @@ const TransactionClient = ({
   const [currentTotal, setCurrentTotal] = useState(total);
   const [currentTotalPages, setCurrentTotalPages] = useState(totalPages);
 
+  // Use refs to track initial values
+  const initialFiltersRef = useRef({ page, limit });
+  const isInitialMount = useRef(true);
+  const previousFiltersRef = useRef<TransactionQueryParams>(filters);
+
   // Convert filters to query string
   const buildQueryString = useCallback((filterParams: TransactionQueryParams) => {
     const params = new URLSearchParams();
@@ -86,11 +91,10 @@ const TransactionClient = ({
     window.history.pushState({}, '', newUrl);
   }, [buildQueryString]);
 
-  const fetchTransactions = useCallback(async (filterParams?: TransactionQueryParams) => {
+  const fetchTransactions = useCallback(async (filterParams: TransactionQueryParams) => {
     setLoading(true);
     try {
-      const queryParams = filterParams || filters;
-      const queryString = buildQueryString(queryParams);
+      const queryString = buildQueryString(filterParams);
       
       const res = await fetch(`/api/client/transactions?${queryString}`);
       
@@ -104,15 +108,6 @@ const TransactionClient = ({
         setTransactions(result.data.data ?? []);
         setCurrentTotal(result.data.total);
         setCurrentTotalPages(result.data.totalPages);
-        
-        // Update filters with new pagination info
-        if (result.data.page && result.data.limit) {
-          setFilters(prev => ({
-            ...prev,
-            page: result?.data?.page,
-            limit: result?.data?.limit
-          }));
-        }
       }
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -120,22 +115,27 @@ const TransactionClient = ({
     } finally {
       setLoading(false);
     }
-  }, [filters, buildQueryString]);
+  }, [buildQueryString]);
 
-  // Initial fetch on mount
+  // Fetch when filters change (but not on initial mount)
   useEffect(() => {
-    // Only fetch if we have filters different from initial
-    if (filters.page !== page || filters.limit !== limit || 
-        filters.type || filters.status || filters.from || filters.to) {
-      fetchTransactions();
+    // Skip initial mount to prevent double fetch
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
-  }, []); // Empty dependency array for initial mount only
 
-  // Fetch when filters change
-  useEffect(() => {
+    // Check if filters actually changed
+    const hasFiltersChanged = JSON.stringify(previousFiltersRef.current) !== JSON.stringify(filters);
+    
+    if (!hasFiltersChanged) {
+      return;
+    }
+
     const timer = setTimeout(() => {
-      fetchTransactions();
+      fetchTransactions(filters);
       updateURL(filters);
+      previousFiltersRef.current = { ...filters };
     }, 300); // Debounce to prevent too many requests
 
     return () => clearTimeout(timer);
@@ -185,6 +185,14 @@ const TransactionClient = ({
       status: value === "all" ? undefined : value as TransactionStatus
     }));
   };
+
+  // Handle pagination
+  const handlePageChange = useCallback((newPage: number) => {
+    setFilters(prev => ({
+      ...prev,
+      page: newPage
+    }));
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -382,7 +390,7 @@ const TransactionClient = ({
                     onClick={(e) => {
                       e.preventDefault();
                       if (filters.page && filters.page > 1) {
-                        setFilters({ ...filters, page: filters.page - 1 });
+                        handlePageChange(filters.page - 1);
                       }
                     }}
                     className={`border-wg-primary/20 hover:bg-wg-primary/5 ${
@@ -399,7 +407,7 @@ const TransactionClient = ({
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          setFilters({ ...filters, page: pageNum });
+                          handlePageChange(pageNum);
                         }}
                         isActive={filters.page === pageNum}
                         className={cn(
@@ -427,7 +435,7 @@ const TransactionClient = ({
                     onClick={(e) => {
                       e.preventDefault();
                       if (filters.page && filters.page < currentTotalPages) {
-                        setFilters({ ...filters, page: filters.page + 1 });
+                        handlePageChange(filters.page + 1);
                       }
                     }}
                     className={`border-wg-primary/20 hover:bg-wg-primary/5 ${

@@ -1,54 +1,39 @@
 import { auth0 } from './auth0';
-import { redirect } from 'next/navigation';
-import { createUserFromAuth0 } from './createUserFromAuth0';
+import { decodeJwt } from 'jose';
+import { AppRole } from '@/lib/auth/roles';
+import { createAdminFromAuth0, createUserFromAuth0 } from './createUserFromAuth0';
 
-export interface Auth0User {
-  id: string;
-  email: string;
-  name?: string;
-  [key: string]: any;
+const ROLE_NAMESPACE = 'https://api.watergroove.com/roles';
+
+export interface ServerAuthContext {
+  user: any | null;
+  role: AppRole | null;
 }
 
-export async function getServerUser(): Promise<any> {
+export async function resolveServerAuth(): Promise<ServerAuthContext> {
   const session = await auth0.getSession();
-  
-  if (!session || !session.user) {
-    redirect('/auth/login');
+
+  if (!session?.user || !session.tokenSet?.idToken) {
+    return { user: null, role: null };
   }
 
-  const user = await createUserFromAuth0(session.user);
-  return user;
-}
+  const claims = decodeJwt(session.tokenSet.idToken);
+  const roles = claims[ROLE_NAMESPACE];
 
-export async function getServerUserId(): Promise<any> {
-  const session = await auth0.getSession();
-  
-  if (!session || !session.user) {
-    redirect('/auth/login');
+  let role: AppRole | null = null;
+
+  if (Array.isArray(roles)) {
+    if (roles.includes(AppRole.SUPERADMIN)) role = AppRole.SUPERADMIN;
+    else if (roles.includes(AppRole.ADMIN)) role = AppRole.ADMIN;
+    else role = AppRole.USER;
   }
 
-  const user = await createUserFromAuth0(session.user);
-  return user?.id;
+  const user =
+    role === AppRole.ADMIN || role === AppRole.SUPERADMIN
+      ? await createAdminFromAuth0(session.user, role)
+      : await createUserFromAuth0(session.user);
+
+  return { user, role };
 }
 
-export async function getServerAdmin(): Promise<any> {
-  const session = await auth0.getSession();
-  
-  if (!session || !session.user) {
-    redirect('/auth/login');
-  }
 
-  const user = await createUserFromAuth0(session.user);
-  return user;
-}
-
-export async function getServerAdminId(): Promise<any> {
-  const session = await auth0.getSession();
-  
-  if (!session || !session.user) {
-    redirect('/auth/login');
-  }
-
-  const user = await createUserFromAuth0(session.user);
-  return user?.id;
-}

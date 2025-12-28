@@ -6,8 +6,8 @@ import {
   getAllInvestmentCategory,
   getDashboardOverview,
 } from "@/services/client/r.service";
-import { getServerUser } from "@/lib/server/auth0-server";
-import { ApiResponse, CategoryDto, DashboardOverviewData } from "@/types/type";
+import { resolveServerAuth } from "@/lib/server/auth0-server";
+import { DashboardOverviewData } from "@/types/type";
 
 export const metadata: Metadata = {
   title: "Dashboard | Water Groove",
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
 };
 
 // Helper function to format the dashboard data with proper types
-function formatDashboardData(data: DashboardOverviewData, auth0User: any) {
+function formatDashboardData(data: DashboardOverviewData, authUser: any) {
   return {
     user: {
       ...data.user,
       // Ensure user data matches the Auth0 user
       id: data.user.id,
-      email: data.user.email || auth0User.email,
-      fullName: data.user.fullName || auth0User.name || "User",
+      email: data.user.email || authUser.email,
+      fullName: data.user.fullName || authUser.name || "User",
     },
     category: data.category,
     wallet: data.wallet,
@@ -35,14 +35,14 @@ function formatDashboardData(data: DashboardOverviewData, auth0User: any) {
 export default async function DashboardPage() {
   try {
     // Get Auth0 user on server side
-    const auth0User = await getServerUser();
+    const { user } = await resolveServerAuth();
 
     // Fetch dashboard data
-    const dashboardData = await getDashboardOverview(auth0User.id);
+    const dashboardData = await getDashboardOverview(user?.id);
     const investmemtCategoeies = await getAllInvestmentCategory();
 
     // Format and validate data
-    const formattedData = formatDashboardData(dashboardData, auth0User);
+    const formattedData = formatDashboardData(dashboardData, user);
 
     return (
       <Suspense fallback={<DashboardSkeleton />}>

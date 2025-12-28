@@ -1,12 +1,12 @@
-import { Metadata } from 'next';
-import { getServerAdminId } from '@/lib/server/auth0-server';
-import { AdminTransactionQueryParams } from '@/types/adminType';
-import { TransactionStatus, TransactionType } from '@prisma/client';
-import { getTransactions } from '@/services/admin/r.service';
-import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import RoisClient from '../_components/RoisClient';
+import { Metadata } from "next";
+import { resolveServerAuth } from "@/lib/server/auth0-server";
+import { AdminTransactionQueryParams } from "@/types/adminType";
+import { TransactionStatus, TransactionType } from "@prisma/client";
+import { getTransactions } from "@/services/admin/r.service";
+import { Card, CardContent } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import RoisClient from "../_components/RoisClient";
 
 export const metadata: Metadata = {
   title: "ROI Transactions | Water Groove Admin",
@@ -18,28 +18,29 @@ const ROIs = async ({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) => {
-  const adminId = await getServerAdminId();
-  const searchP = await searchParams
+  const resolved = await resolveServerAuth();
+  const adminId = resolved?.user?.id;
 
-  
+  const searchP = await searchParams;
+
   // Parse query parameters
   const queryParams: AdminTransactionQueryParams = {
-    status: searchP.status as TransactionStatus || undefined,
-    order: (searchP.order as 'asc' | 'desc') || 'desc',
+    status: (searchP.status as TransactionStatus) || undefined,
+    order: (searchP.order as "asc" | "desc") || "desc",
     date: searchP.date ? new Date(searchP.date as string) : undefined,
-    transactionId: searchP.transactionId as string || undefined,
+    transactionId: (searchP.transactionId as string) || undefined,
   };
-  
-  const page = parseInt(searchP.page as string || '1');
-  const limit = parseInt(searchP.limit as string || '20');
+
+  const page = parseInt((searchP.page as string) || "1");
+  const limit = parseInt((searchP.limit as string) || "20");
 
   try {
-    const res = await getTransactions(adminId, TransactionType.INTEREST,  {
+    const res = await getTransactions(adminId, TransactionType.INTEREST, {
       ...queryParams,
       page,
       limit,
-    })
-    
+    });
+
     const data = res?.data ?? {
       data: [],
       total: 0,
@@ -63,7 +64,7 @@ const ROIs = async ({
       </div>
     );
   } catch (error) {
-    console.error('Error loading rois:', error);
+    console.error("Error loading rois:", error);
     return (
       <div className="min-h-screen bg-wg-neutral flex items-center justify-center p-4">
         <Card className="bg-wg-neutral2 border-wg-accent/20 max-w-md">
@@ -77,7 +78,7 @@ const ROIs = async ({
             <p className="text-wg-primary/60 mb-4">
               There was an error loading roi transactions. Please try again.
             </p>
-            <Button 
+            <Button
               // onClick={() => window.location.reload()}
               className="bg-wg-accent text-white hover:bg-wg-accent/90"
             >

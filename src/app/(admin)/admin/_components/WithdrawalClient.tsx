@@ -44,6 +44,7 @@ import TransactionTable from "@/components/transaction/TransactionTable";
 import TransactionDetailsModal from "@/components/transaction/TransactionDetailsModal";
 import { formatCurrency } from "@/lib/utils";
 import { ApiResponse } from "@/types/type";
+import { toast } from "react-toastify";
 
 interface WithdrawalClientProps {
   initialTransactions: AdminTransactionRow[];
@@ -72,10 +73,12 @@ const WithdrawalClient: React.FC<WithdrawalClientProps> = ({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [transactions, setTransactions] = useState<AdminTransactionRow[]>(initialTransactions);
+  const [transactions, setTransactions] =
+    useState<AdminTransactionRow[]>(initialTransactions);
   const [loading, setLoading] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<AdminTransactionRow | null>(null);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<AdminTransactionRow | null>(null);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [currentLimit, setCurrentLimit] = useState(initialLimit);
   const [currentTotal, setCurrentTotal] = useState(initialTotal);
@@ -110,36 +113,42 @@ const WithdrawalClient: React.FC<WithdrawalClientProps> = ({
   });
 
   // Build query string from filters
-  const buildQueryString = useCallback((filterParams: AdminTransactionQueryParams) => {
-    const params = new URLSearchParams();
-    
-    // Always include page, limit, and type
-    params.set("page", (filterParams.page || 1).toString());
-    params.set("limit", (filterParams.limit || 20).toString());
-    params.set("type", "WITHDRAWAL"); // Always filter by WITHDRAWAL type
-    
-    // Add optional filters
-    if (filterParams.status && filterParams.status) {
-      params.set("status", filterParams.status);
-    }
-    if (filterParams.order) {
-      params.set("order", filterParams.order);
-    }
-    if (filterParams.date) {
-      params.set("date", filterParams.date.toISOString());
-    }
-    if (filterParams.transactionId) {
-      params.set("transactionId", filterParams.transactionId);
-    }
-    
-    return params.toString();
-  }, []);
+  const buildQueryString = useCallback(
+    (filterParams: AdminTransactionQueryParams) => {
+      const params = new URLSearchParams();
+
+      // Always include page, limit, and type
+      params.set("page", (filterParams.page || 1).toString());
+      params.set("limit", (filterParams.limit || 20).toString());
+      params.set("type", "WITHDRAWAL"); // Always filter by WITHDRAWAL type
+
+      // Add optional filters
+      if (filterParams.status && filterParams.status) {
+        params.set("status", filterParams.status);
+      }
+      if (filterParams.order) {
+        params.set("order", filterParams.order);
+      }
+      if (filterParams.date) {
+        params.set("date", filterParams.date.toISOString());
+      }
+      if (filterParams.transactionId) {
+        params.set("transactionId", filterParams.transactionId);
+      }
+
+      return params.toString();
+    },
+    []
+  );
 
   // Update URL with filters
-  const updateURL = useCallback((filterParams: AdminTransactionQueryParams) => {
-    const queryString = buildQueryString(filterParams);
-    router.push(`/admin/withdrawals?${queryString}`);
-  }, [router, buildQueryString]);
+  const updateURL = useCallback(
+    (filterParams: AdminTransactionQueryParams) => {
+      const queryString = buildQueryString(filterParams);
+      router.push(`/admin/withdrawals?${queryString}`);
+    },
+    [router, buildQueryString]
+  );
 
   // Fetch withdrawals with filters
   const fetchWithdrawals = useCallback(async () => {
@@ -147,12 +156,13 @@ const WithdrawalClient: React.FC<WithdrawalClientProps> = ({
     try {
       const queryString = buildQueryString(filters);
       const res = await fetch(`/api/admin/transactions?${queryString}`);
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
-      const result: ApiResponse<PaginatedResponse<AdminTransactionRow[]>> = await res.json();
+
+      const result: ApiResponse<PaginatedResponse<AdminTransactionRow[]>> =
+        await res.json();
 
       if (result.success && result.data) {
         setTransactions(result.data.data || []);
@@ -170,11 +180,12 @@ const WithdrawalClient: React.FC<WithdrawalClientProps> = ({
 
   // Initial fetch on mount if URL params differ from initial props
   useEffect(() => {
-    const hasFilterParams = searchParams.get("status") || 
-                           searchParams.get("order") || 
-                           searchParams.get("date") || 
-                           searchParams.get("transactionId");
-    
+    const hasFilterParams =
+      searchParams.get("status") ||
+      searchParams.get("order") ||
+      searchParams.get("date") ||
+      searchParams.get("transactionId");
+
     if (hasFilterParams) {
       fetchWithdrawals();
     }
@@ -213,7 +224,7 @@ const WithdrawalClient: React.FC<WithdrawalClientProps> = ({
     key: keyof AdminTransactionQueryParams,
     value: any
   ) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       [key]: value === "" || value === "all" ? undefined : value,
       page: 1, // Reset to first page when filters change
@@ -230,7 +241,7 @@ const WithdrawalClient: React.FC<WithdrawalClientProps> = ({
 
   // Handle page change
   const handlePageChange = (newPage: number) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       page: newPage,
     }));
@@ -238,7 +249,7 @@ const WithdrawalClient: React.FC<WithdrawalClientProps> = ({
 
   // Handle limit change
   const handleLimitChange = (newLimit: number) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       limit: newLimit,
       page: 1, // Reset to first page when changing limit
@@ -249,41 +260,73 @@ const WithdrawalClient: React.FC<WithdrawalClientProps> = ({
   // Handle transaction actions
   const handleTransactionAction = async (
     transaction: AdminTransactionRow,
-    action: string
+    action: "APPROVE" | "REJECT" | "PAID"
   ) => {
     try {
       console.log(`Action: ${action} on transaction: ${transaction.id}`);
 
-      // Update local state for demo
       let newStatus: TransactionStatus;
+      let endpoint: string;
+
       switch (action) {
         case "APPROVE":
           newStatus = TransactionStatus.APPROVED;
+          endpoint = "approve";
           break;
         case "REJECT":
           newStatus = TransactionStatus.REJECTED;
+          endpoint = "reject";
           break;
         case "PAID":
           newStatus = TransactionStatus.PAID;
+          endpoint = "paid";
           break;
         default:
-          newStatus = transaction.status;
+          return; // invalid action → do nothing
+      }
+
+      const res = await fetch(
+        `/api/admin/transactions/withdrawal/${transaction.id}/${endpoint}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        toast.error(result?.message ?? "Failed to update transaction");
+        return;
       }
 
       setTransactions((prev) =>
         prev.map((t) =>
           t.id === transaction.id
-            ? { ...t, status: newStatus, processedAt: new Date() }
+            ? {
+                ...t,
+                status: newStatus,
+                processedAt: new Date(),
+              }
             : t
         )
       );
 
-      alert(
-        `Transaction ${transaction.id} ${action.toLowerCase()}d successfully`
+      toast.success(
+        `Transaction ${transaction.id} ${
+          action === "APPROVE"
+            ? "approved"
+            : action === "REJECT"
+            ? "rejected"
+            : "marked as paid"
+        }`
       );
     } catch (error) {
       console.error("Error processing action:", error);
-      alert("Failed to process action");
+      toast.error("Failed to process action");
     }
   };
 
@@ -359,9 +402,7 @@ const WithdrawalClient: React.FC<WithdrawalClientProps> = ({
               </label>
               <Select
                 value={filters.status || "all"}
-                onValueChange={(value) =>
-                  handleFilterChange("status", value)
-                }
+                onValueChange={(value) => handleFilterChange("status", value)}
               >
                 <SelectTrigger className="bg-wg-neutral border-wg-accent/20 text-wg-primary">
                   <SelectValue placeholder="All statuses" />
@@ -422,7 +463,8 @@ const WithdrawalClient: React.FC<WithdrawalClientProps> = ({
           <div className="flex justify-between items-center mt-6">
             <div className="text-sm text-wg-primary/60">
               Showing {((filters.page || 1) - 1) * currentLimit + 1} to{" "}
-              {Math.min((filters.page || 1) * currentLimit, currentTotal)} of {currentTotal} withdrawals
+              {Math.min((filters.page || 1) * currentLimit, currentTotal)} of{" "}
+              {currentTotal} withdrawals
             </div>
             <div className="flex gap-2">
               <Button
@@ -492,38 +534,41 @@ const WithdrawalClient: React.FC<WithdrawalClientProps> = ({
                     />
                   </PaginationItem>
 
-                  {Array.from({ length: Math.min(5, currentTotalPages) }, (_, i) => {
-                    let pageNum;
-                    if (currentTotalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if ((filters.page || 1) <= 3) {
-                      pageNum = i + 1;
-                    } else if ((filters.page || 1) >= currentTotalPages - 2) {
-                      pageNum = currentTotalPages - 4 + i;
-                    } else {
-                      pageNum = (filters.page || 1) - 2 + i;
-                    }
+                  {Array.from(
+                    { length: Math.min(5, currentTotalPages) },
+                    (_, i) => {
+                      let pageNum;
+                      if (currentTotalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if ((filters.page || 1) <= 3) {
+                        pageNum = i + 1;
+                      } else if ((filters.page || 1) >= currentTotalPages - 2) {
+                        pageNum = currentTotalPages - 4 + i;
+                      } else {
+                        pageNum = (filters.page || 1) - 2 + i;
+                      }
 
-                    return (
-                      <PaginationItem key={pageNum}>
-                        <PaginationLink
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handlePageChange(pageNum);
-                          }}
-                          isActive={pageNum === (filters.page || 1)}
-                          className={
-                            pageNum === (filters.page || 1)
-                              ? "bg-wg-accent text-white hover:bg-wg-accent/90"
-                              : "hover:bg-wg-accent/20"
-                          }
-                        >
-                          {pageNum}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  })}
+                      return (
+                        <PaginationItem key={pageNum}>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handlePageChange(pageNum);
+                            }}
+                            isActive={pageNum === (filters.page || 1)}
+                            className={
+                              pageNum === (filters.page || 1)
+                                ? "bg-wg-accent text-white hover:bg-wg-accent/90"
+                                : "hover:bg-wg-accent/20"
+                            }
+                          >
+                            {pageNum}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    }
+                  )}
 
                   <PaginationItem>
                     <PaginationNext

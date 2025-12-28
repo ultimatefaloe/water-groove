@@ -250,7 +250,7 @@ const InvestmentDetailsModal: React.FC<InvestmentDetailsModalProps> = ({
             <>
               <Button
                 onClick={() => {
-                  onAction(investment, 'APPROVE');
+                  onAction(investment, 'ACTIVE');
                   onClose();
                 }}
                 className="bg-green-600 text-white hover:bg-green-700"
@@ -259,7 +259,7 @@ const InvestmentDetailsModal: React.FC<InvestmentDetailsModalProps> = ({
               </Button>
               <Button
                 onClick={() => {
-                  onAction(investment, 'REJECT');
+                  onAction(investment, 'REJECTED');
                   onClose();
                 }}
                 variant="destructive"
@@ -284,7 +284,7 @@ const InvestmentDetailsModal: React.FC<InvestmentDetailsModalProps> = ({
           {isAdmin && investment.status === 'PAUSED' && (
             <Button
               onClick={() => {
-                onAction(investment, 'RESUME');
+                onAction(investment, 'ACTIVE');
                 onClose();
               }}
               className="bg-green-600 text-white hover:bg-green-700"

@@ -131,3 +131,8 @@ export function buildPaginationMeta(
     hasPreviousPage: page > 1
   }
 }
+
+export const calculateROI = (principal: number, rate: number, months: number) => {
+  const annualROI = (principal * rate * months) / 12;
+  return formatCurrency(annualROI);
+};

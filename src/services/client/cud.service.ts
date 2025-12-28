@@ -1,9 +1,14 @@
 import { prisma } from "@/lib/prisma"
-import { getServerUserId } from "@/lib/server/auth0-server"
+import { resolveServerAuth } from "@/lib/server/auth0-server"
 import { ApiResponse, BankDetails, CreateDeposit, WithdrawalRequestDto } from "@/types/type"
 import { TransactionStatus, TransactionType } from "@prisma/client"
 import { getPlatformBankDetails } from "./r.service"
 
+async function authorizeUser() {
+  const authUser = await resolveServerAuth()
+  if (!authUser.user) throw new Error("Unauthorized")
+  return authUser.user.id
+}
 
 export async function validateTierAmount(amount: number, catId: string) {
 
@@ -57,7 +62,8 @@ export async function createDepositService({
   description,
 }: CreateDeposit): Promise<ApiResponse<BankDetails | null>> {
 
-  const userId = await getServerUserId()
+  const userId = await authorizeUser()
+
 
   if (!userId) return {
     success: false,
@@ -80,7 +86,7 @@ export async function createDepositService({
           userId,
           categoryId: data ? data?.id : '',
           principalAmount: amount,
-          roiRateSnapshot: data?.monthlyRoiRate ?? 2,
+          roiRateSnapshot: data?.monthlyRoiRate ?? 0,
           durationMonths: data?.durationMonths ?? 18,
         }
       })
@@ -126,7 +132,8 @@ export async function uploadDepositProofService(
   proofUrl?: string
 ): Promise<ApiResponse<null>> {
 
-  const userId = await getServerUserId()
+  const userId = await authorizeUser()
+
   if (!proofUrl) {
     return {
       success: false,
@@ -176,46 +183,41 @@ export async function withdrawalRequestService({
   accountHolderName,
   amount,
   earlyWithdrawal
-}: WithdrawalRequestDto): Promise<ApiResponse<WithdrawalRequestDto | null>> {
-
-  const userId = await getServerUserId()
-
-  if (!userId) return {
-    success: false,
-    message: "Invalid userId",
-    data: null
-  }
-
+}: WithdrawalRequestDto): Promise<ApiResponse<null>> {
+  const userId = await authorizeUser()
   try {
     const inst = await prisma.investment.findFirst({
-      where: {
-        userId
-      }
-    })
-    const balance = await prisma.investorBalance.findUniqueOrThrow({
-      where: { investmentId: inst?.id },
-    })
+      where: { userId }
+    });
 
-    if (earlyWithdrawal) {
-      if (+amount > Number(balance?.availableBalance) + Number(balance?.principalLocked)) {
-        throw new Error("Insufficient balance")
-      }
-    } else {
-      if (+amount > Number(balance?.availableBalance)) {
-        throw new Error("Insufficient balance")
-      }
+    if (!inst) throw new Error("Investment not found");
+
+    const balance = await prisma.investorBalance.findUniqueOrThrow({
+      where: { investmentId: inst.id },
+    });
+
+    const available = Number(balance.availableBalance);
+    const locked = Number(balance.principalLocked);
+    const withdrawalAmount = Number(amount);
+
+    const maxWithdrawable = earlyWithdrawal
+      ? available + locked
+      : available;
+
+    if (withdrawalAmount > maxWithdrawable) {
+      throw new Error("Insufficient balance");
     }
 
     const txn = await prisma.transaction.create({
       data: {
         userId,
-        investmentId: inst?.id,
+        investmentId: inst.id,
         type: TransactionType.WITHDRAWAL,
-        amount: +amount,
+        amount: withdrawalAmount,
         status: TransactionStatus.PENDING,
-        earlyWithdrawal: earlyWithdrawal ? true : false
+        earlyWithdrawal: !!earlyWithdrawal,
       },
-    })
+    });
 
     await prisma.withdrawalDetail.create({
       data: {
@@ -224,20 +226,20 @@ export async function withdrawalRequestService({
         accountNumber: String(accountNumber),
         bankName: String(bankName),
       },
-    })
+    });
 
     return {
       success: true,
-      message: "Withdrawal request created successfully, wait while we process you request",
+      message: "Withdrawal request submitted successfully",
       data: null
-    }
+    };
+
   } catch (error: any) {
-    console.error(error)
+    console.error(error);
     return {
       success: false,
       message: error.message,
       data: null
-    }
+    };
   }
-
 }

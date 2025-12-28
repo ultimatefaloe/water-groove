@@ -74,6 +74,7 @@ model User {
 
 model Admin {
   id           String    @id @default(uuid())
+  auth_Id      String    @unique
   fullName     String
   email        String    @unique
   passwordHash String
@@ -85,6 +86,7 @@ model Admin {
   updatedAt   DateTime  @updatedAt
 
   approvedInvestments   Investment[]          @relation("ApprovedInvestments")
+  withdrawalPenalty     WithdrawalPenalty[]
   processedTransactions Transaction[]         @relation("ProcessedTransactions")
   platformBankAccounts  PlatformBankAccount[]
 
@@ -102,7 +104,7 @@ model InvestmentCategory {
   minAmount Decimal  @db.Decimal(15, 2)
   maxAmount Decimal? @db.Decimal(15, 2)
 
-  monthlyRoiRate Decimal @db.Decimal(5, 2) @default(0.02)
+  monthlyRoiRate Decimal @default(0.02) @db.Decimal(5, 2)
   durationMonths Int // e.g. 18
 
   description String?
@@ -179,9 +181,9 @@ model Transaction {
   investmentId String?
   investment   Investment? @relation(fields: [investmentId], references: [id])
 
-  earlyWithdrawal Boolean @default(false)
-  type   TransactionType
-  status TransactionStatus @default(PENDING)
+  earlyWithdrawal Boolean           @default(false)
+  type            TransactionType
+  status          TransactionStatus @default(PENDING)
 
   amount      Decimal @db.Decimal(15, 2)
   proofUrl    String?
@@ -194,12 +196,32 @@ model Transaction {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  withdrawalDetail WithdrawalDetail?
+  withdrawalDetail  WithdrawalDetail?
+  withdrawalPenalty WithdrawalPenalty?
 
   @@index([userId])
   @@index([investmentId])
   @@index([type])
   @@index([status])
+}
+
+model WithdrawalPenalty {
+  id String @id @default(uuid())
+
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  percentage Decimal @db.Decimal(5, 2) // e.g. 25.00
+  amount     Decimal @db.Decimal(15, 2)
+
+  reason String // "Early withdrawal before maturity"
+
+  appliedByAdminId String
+  appliedByAdmin   Admin  @relation(fields: [appliedByAdminId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([transactionId])
 }
 
 model WithdrawalDetail {
