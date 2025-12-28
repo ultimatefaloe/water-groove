@@ -387,7 +387,7 @@ const InvestmentClient: React.FC<InvestmentClientProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-wg-neutral p-6">
+    <div className="min-h-screen bg-wg-neutral">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-8">
         <StatsCard

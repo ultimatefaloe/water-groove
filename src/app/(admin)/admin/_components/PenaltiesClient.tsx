@@ -190,7 +190,7 @@ const PenaltiesClient: React.FC<PenaltiesClientProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-wg-neutral p-6">
+    <div className="min-h-screen bg-wg-neutral">
       {/* Show fallback warning if needed */}
       <FallbackWarning />
 

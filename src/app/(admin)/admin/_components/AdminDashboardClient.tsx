@@ -262,7 +262,7 @@ const AdminDashboardClient = ({
   };
 
   return (
-    <div className="min-h-screen p-6 bg-wg-neutral">
+    <div className="min-h-screen bg-wg-neutral">
       {/* Show warning when using fallback data */}
       {showFallbackWarning && (
         <FallbackWarning 
@@ -271,19 +271,6 @@ const AdminDashboardClient = ({
         />
       )}
       
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-wg-primary">Admin Dashboard</h1>
-        <p className="text-wg-primary/60 mt-2">
-          Overview of your investment platform statistics
-          {isFallbackData && (
-            <span className="text-yellow-400 ml-2">
-              (Using fallback data)
-            </span>
-          )}
-        </p>
-      </div>
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatsCard
