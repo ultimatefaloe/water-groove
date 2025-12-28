@@ -133,6 +133,7 @@ model Investment {
 
   roiRateSnapshot Decimal @db.Decimal(5, 2)
   durationMonths  Int
+  lastRoiPeriodPaid Int @default(0)
 
   status InvestmentStatus @default(PENDING_PAYMENT)
 
@@ -258,4 +259,9 @@ model PlatformBankAccount {
 
   @@index([isActive])
   @@index([isDefault])
+}
+
+model CronLock {
+  name String @id
+  lockedAt DateTime
 }

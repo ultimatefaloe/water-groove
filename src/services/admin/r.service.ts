@@ -269,7 +269,7 @@ export async function getAdminDashboardOverview(
   }
 }
 
-export async function getAllPenaties(
+export async function getAllPenalties(
   adminId: string,
   params: AdminPenaltiesQueryParams & { page?: number; limit?: number }
 ): Promise<ApiResponse<PaginatedResponse<AdminPenaltyRow[]>>> {
