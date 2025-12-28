@@ -7,6 +7,7 @@ import {
   BanknoteArrowDown,
   BanknoteArrowUp,
   PiggyBank,
+  BanknoteX,
 } from "lucide-react";
 
 
@@ -42,13 +43,13 @@ export const adminNavItems: NavLinks[] = [
     icon: Banknote,
   },
   {
+    title: "Penalties",
+    href: "/admin/penalties",
+    icon: BanknoteX,
+  },
+  {
     title: "Reports",
     href: "/admin/reports",
     icon: FileBarChart,
   },
-  // {
-  //   title: "Settings",
-  //   href: "/admin/settings",
-  //   icon: Settings,
-  // },
 ];

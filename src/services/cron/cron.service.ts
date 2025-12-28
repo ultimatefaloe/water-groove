@@ -43,7 +43,7 @@ export async function paySingleRoiPeriod(investmentId: string, period: number) {
     const principal = Number(investment.investorBalance.principalLocked)
     if (principal <= 0) return
 
-    const roiRate = Number(investment.roiRateSnapshot) / 100
+    const roiRate = Number(investment.roiRateSnapshot)
     const roiAmount = Number((principal * roiRate).toFixed(2))
 
     if (roiAmount <= 0) return
