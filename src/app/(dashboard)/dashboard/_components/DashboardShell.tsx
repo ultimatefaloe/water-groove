@@ -8,29 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { dashboardNavItems } from "@/config/navigations";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
-import { useUser } from "@auth0/nextjs-auth0";
-import { AuthData } from "@/types/type";
+import { AuthData, Auth0User } from "@/types/type";
 
 interface Props {
   children: React.ReactNode;
+  authUser: Auth0User
 }
 
-export default function DashboardShell({ children }: Props) {
+export default function DashboardShell({ children, authUser }: Props) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, error, isLoading } = useUser();
   const authData: AuthData = {
-    isLoading,
-    error: error?.message || (error ? String(error) : undefined),
-    user: user
+    isLoading: false,
+    error: undefined,
+    user: authUser
       ? {
-          name: user.name || user.nickname || user.email || "User",
-          picture: user.picture,
-          email: user.email || "",
-          role: (user as any).role || "user", // Cast to any if Auth0 user has custom properties
+          name: authUser.fullName || authUser.nickname || "User",
+          picture: authUser.picture || undefined,
+          email: authUser.email || "",
+          role: (authUser as any).role || "user", // Cast to any if Auth0 admin has custom properties
         }
       : undefined,
   };
+
   const pageTitle =
     dashboardNavItems.find((i) => pathname === i.href)?.title ?? "Dashboard";
 
