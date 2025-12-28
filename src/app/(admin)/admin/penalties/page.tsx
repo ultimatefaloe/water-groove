@@ -17,17 +17,14 @@ const page = async ({
   try {
     const resolved = await resolveServerAuth();
     const adminId = resolved?.user?.id;
-
-    if (!adminId) {
-      throw new Error("Admin authentication required");
-    }
+    const searchP = await searchParams;
 
     // Parse query parameters
     const params: AdminPenaltiesQueryParams = {
-      transactionId: searchParams.transactionId as string || undefined,
-      order: (searchParams.order as 'asc' | 'desc') || 'desc',
-      page: searchParams.page ? parseInt(searchParams.page as string) : 1,
-      limit: searchParams.limit ? parseInt(searchParams.limit as string) : 20,
+      transactionId: (searchP.transactionId as string) || undefined,
+      order: (searchP.order as "asc" | "desc") || "desc",
+      page: searchP.page ? parseInt(searchP.page as string) : 1,
+      limit: searchP.limit ? parseInt(searchP.limit as string) : 20,
     };
 
     const response = await getAllPenalties(adminId, params);
@@ -53,7 +50,7 @@ const page = async ({
     );
   } catch (error) {
     console.error("Error loading penalties:", error);
-    
+
     // Fallback data for error state
     const fallbackData = {
       data: [],
