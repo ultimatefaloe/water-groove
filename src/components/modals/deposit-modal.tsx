@@ -141,7 +141,7 @@ export function DepositModal({
   });
 
   const proofForm = useForm<ProofUploadFormValues>({
-    resolver: zodResolver(proofUploadSchema),
+    resolver: zodResolver(proofUploadSchema as any),
     defaultValues: {
       proofFile: undefined,
     },
