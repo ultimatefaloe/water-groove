@@ -136,12 +136,12 @@ const Navbar = () => {
               </div>
             ) : (
               <>
-                <Link href="/auth/login">
+                <Link href="/api/auth/login">
                   <Button variant="ghost" className="text-wg-primary hover:text-wg-primary hover:bg-wg-secondary/50">
                     Login
                   </Button>
                 </Link>
-                <Link href="/auth/login">
+                <Link href="/api/auth/login">
                   <Button className="bg-wg-primary hover:bg-wg-primary/90 text-wg-secondary">
                     Get Started
                   </Button>
@@ -248,7 +248,7 @@ const Navbar = () => {
                                 handleLogout();
                                 setIsMobileMenuOpen(false);
                               }}
-                              className="flex items-center justify-center rounded-lg p-2 text-sm text-wg-primary/70 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                              className="flex items-center justify-center rounded-lg p-2 text-sm text-wg-primary/70 hover:bg-destructive/10 hover:text-destructive transition-color cursor-pointer"
                             >
                               <LogOut className="h-4 w-4" />
                             </button>
@@ -256,12 +256,12 @@ const Navbar = () => {
                         </>
                       ) : (
                         <>
-                          <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Link href="/api/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
                             <Button variant="outline" className="w-full text-wg-primary border-sidebar-border hover:bg-wg-secondary/50">
                               Login
                             </Button>
                           </Link>
-                          <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Link href="/api/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
                             <Button className="w-full bg-wg-primary hover:bg-wg-primary/90 text-wg-secondary">
                               Get Started
                             </Button>

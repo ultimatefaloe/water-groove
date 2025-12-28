@@ -47,9 +47,9 @@ export const adminNavItems: NavLinks[] = [
     href: "/admin/penalties",
     icon: BanknoteX,
   },
-  {
-    title: "Reports",
-    href: "/admin/reports",
-    icon: FileBarChart,
-  },
+  // {
+  //   title: "Reports",
+  //   href: "/admin/reports",
+  //   icon: FileBarChart,
+  // },
 ];
