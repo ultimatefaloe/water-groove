@@ -35,3 +35,5 @@ export async function resolveServerAuth(): Promise<ServerAuthContext> {
 
   return { user, role };
 }
+
+

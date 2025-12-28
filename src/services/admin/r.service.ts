@@ -3,12 +3,12 @@ import { Prisma, TransactionStatus, TransactionType } from "@prisma/client"
 import { AdminDashboardOverview, AdminUserQueryParams, AdminUserRow, AdminInvestmentQueryParams, AdminInvestmentRow, AdminTransactionQueryParams, AdminTransactionRow, PaginatedResponse, AdminPenaltiesQueryParams, AdminPenaltyRow } from "@/types/adminType"
 import { ApiResponse } from "@/types/type"
 import { buildDateFilter, buildOrder, buildPaginationMeta, paginate } from "@/lib/utils"
-import { getServerUserId } from "@/lib/server/auth0-server"
+import { resolveServerAuth } from "@/lib/server/auth0-server"
 import { mapInvestmentToAdminRow, mapPeneltyToAdminRow, mapTransactionToAdminRow, mapUserToAdminRow } from "@/utils/mapper"
 
 async function authorizeAdmin(adminId: string) {
-  const authAdmin = await getServerUserId()
-  if (authAdmin !== adminId) throw new Error("Unauthorized")
+  const authAdmin = await resolveServerAuth()
+  if (authAdmin.user.id !== adminId) throw new Error("Unauthorized")
 }
 
 export async function getTransactions(

@@ -6,11 +6,12 @@ export const auth0 = new Auth0Client({
     scope: "openid profile email",
   },
   session: {
-    cookie: {
-      sameSite: process.env.NODE_ENV === 'production' ? "none" : "lax",   // survives OAuth redirect on localhost
-      secure: process.env.NODE_ENV === 'production' ? true : false,     // must be false on HTTP
-    },
     rolling: true,
     absoluteDuration: 3600,
+    cookie: {
+      sameSite: "none",
+      secure: true, // REQUIRED when sameSite = none
+    },
   },
 });
+

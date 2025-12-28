@@ -7,14 +7,10 @@ export async function createUserFromAuth0(auth0User: any) {
     const auth0Id = auth0User?.sub;
     if (!auth0Id) return null;
 
-    const existingUser = await prisma.user.findUnique({
+    const createdUser = await prisma.user.upsert({
       where: { auth_Id: auth0Id },
-    });
-
-    if (existingUser) return existingUser;
-
-    const createdUser =  await prisma.user.create({
-      data: {
+      update: {},
+      create: {
         auth_Id: auth0Id,
         email: auth0User.email ?? null,
         fullName: auth0User.name ?? '',
@@ -42,14 +38,10 @@ export async function createAdminFromAuth0(authAdmin: any, role: AppRole) {
     const auth0Id = authAdmin?.sub;
     if (!auth0Id) return null;
 
-    const existingAdmin = await prisma.admin.findUnique({
+    const createdAdmin = await prisma.admin.upsert({
       where: { auth_Id: auth0Id },
-    });
-
-    if (existingAdmin) return existingAdmin;
-
-    const createdAdmin =  await prisma.admin.create({
-      data: {
+      update: {},
+      create: {
         auth_Id: auth0Id,
         email: authAdmin.email ?? null,
         fullName: authAdmin.name ?? '',

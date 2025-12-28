@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma"
-import { getServerUserId } from "@/lib/server/auth0-server";
+import { resolveServerAuth } from "@/lib/server/auth0-server";
 import { ApiResponse, InvestmenCrontDto } from "@/types/type"
 import { InvestmentStatus, TransactionStatus, TransactionType } from "@prisma/client";
 
 async function authorizeAdmin(adminId: string) {
-  const authAdmin = await getServerUserId()
-  if (authAdmin !== adminId) throw new Error("Unauthorized")
+  const authAdmin = await resolveServerAuth()
+  if (authAdmin.user.id !== adminId) throw new Error("Unauthorized")
 }
 
 //Deposit

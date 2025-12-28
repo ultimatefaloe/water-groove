@@ -1,9 +1,14 @@
 import { prisma } from "@/lib/prisma"
-import { getServerUserId } from "@/lib/server/auth0-server"
+import { resolveServerAuth } from "@/lib/server/auth0-server"
 import { ApiResponse, BankDetails, CreateDeposit, WithdrawalRequestDto } from "@/types/type"
 import { TransactionStatus, TransactionType } from "@prisma/client"
 import { getPlatformBankDetails } from "./r.service"
 
+async function authorizeUser() {
+  const authUser = await resolveServerAuth()
+  if (!authUser.user) throw new Error("Unauthorized")
+  return authUser.user.id
+}
 
 export async function validateTierAmount(amount: number, catId: string) {
 
@@ -57,7 +62,8 @@ export async function createDepositService({
   description,
 }: CreateDeposit): Promise<ApiResponse<BankDetails | null>> {
 
-  const userId = await getServerUserId()
+  const userId = await authorizeUser()
+
 
   if (!userId) return {
     success: false,
@@ -126,7 +132,8 @@ export async function uploadDepositProofService(
   proofUrl?: string
 ): Promise<ApiResponse<null>> {
 
-  const userId = await getServerUserId()
+  const userId = await authorizeUser()
+
   if (!proofUrl) {
     return {
       success: false,
@@ -177,17 +184,7 @@ export async function withdrawalRequestService({
   amount,
   earlyWithdrawal
 }: WithdrawalRequestDto): Promise<ApiResponse<null>> {
-
-  const userId = await getServerUserId();
-
-  if (!userId) {
-    return {
-      success: false,
-      message: "Invalid userId",
-      data: null
-    };
-  }
-
+  const userId = await authorizeUser()
   try {
     const inst = await prisma.investment.findFirst({
       where: { userId }

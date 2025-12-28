@@ -1,15 +1,15 @@
-import { getServerAdminId } from "@/lib/server/auth0-server";
+import { resolveServerAuth } from "@/lib/server/auth0-server";
 import { updateInvestment } from "@/services/admin/cud.service";
 import { InvestmentStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, context: { params: Promise<{ id: string; }> }) {
   try {
-    const ivstId = (await params).id
+    const ivstId = (await context.params).id
+    const resolved = await resolveServerAuth();
+    const adminId = resolved?.user?.id
 
     const { status }: { status: InvestmentStatus } = await req.json()
-
-    console.log(status)
 
     if (!ivstId || !status) {
       return NextResponse.json(
@@ -17,8 +17,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         { status: 400 }
       );
     }
-
-    const adminId = await getServerAdminId();
 
     const res = await updateInvestment(ivstId, status, adminId);
 

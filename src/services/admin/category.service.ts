@@ -1,8 +1,13 @@
 import { prisma } from "@/lib/prisma"
+import { resolveServerAuth } from "@/lib/server/auth0-server";
 import { InvestmentCategorySchema } from "@/lib/zod"
 import { ApiResponse, CategoryDto } from "@/types/type"
 import { mapCategoryToDto } from "@/utils/mapper";
 
+async function authorizeAdmin(adminId: string) {
+  const authAdmin = await resolveServerAuth()
+  if (authAdmin.user.id !== adminId) throw new Error("Unauthorized")
+}
 //create
 export async function createCategoryService(data: CategoryDto): Promise<ApiResponse<null>> {
   try {

@@ -181,8 +181,6 @@ export function WithdrawalModal({
     return formAction(formData);
   };
 
-  console.log(form.formState.errors)
-
   return (
     <Modal
       isOpen={isOpen}

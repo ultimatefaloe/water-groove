@@ -1,12 +1,12 @@
-import { Metadata } from 'next';
-import { getServerAdminId } from '@/lib/server/auth0-server';
-import { getAllInvestments } from '@/services/admin/r.service';
-import InvestmentClient from '../_components/InvestmentClient';
-import { AdminInvestmentQueryParams } from '@/types/adminType';
-import { InvestmentStatus } from '@prisma/client';
-import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Metadata } from "next";
+import { resolveServerAuth } from "@/lib/server/auth0-server";
+import { getAllInvestments } from "@/services/admin/r.service";
+import InvestmentClient from "../_components/InvestmentClient";
+import { AdminInvestmentQueryParams } from "@/types/adminType";
+import { InvestmentStatus } from "@prisma/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Investment Management | Water Groove Admin",
@@ -18,20 +18,25 @@ const Investments = async ({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) => {
-  const adminId = await getServerAdminId();
-  
+  const resolved = await resolveServerAuth();
+  const adminId = resolved?.user?.id;
+
   // Parse query parameters
   const queryParams: AdminInvestmentQueryParams = {
-    userId: searchParams.userId as string || undefined,
-    categoryId: searchParams.categoryId as string || undefined,
-    status: searchParams.status as InvestmentStatus || undefined,
-    startDate: searchParams.startDate ? new Date(searchParams.startDate as string) : undefined,
-    endDate: searchParams.endDate ? new Date(searchParams.endDate as string) : undefined,
-    order: (searchParams.order as 'asc' | 'desc') || 'desc',
+    userId: (searchParams.userId as string) || undefined,
+    categoryId: (searchParams.categoryId as string) || undefined,
+    status: (searchParams.status as InvestmentStatus) || undefined,
+    startDate: searchParams.startDate
+      ? new Date(searchParams.startDate as string)
+      : undefined,
+    endDate: searchParams.endDate
+      ? new Date(searchParams.endDate as string)
+      : undefined,
+    order: (searchParams.order as "asc" | "desc") || "desc",
   };
-  
-  const page = parseInt(searchParams.page as string || '1');
-  const limit = parseInt(searchParams.limit as string || '20');
+
+  const page = parseInt((searchParams.page as string) || "1");
+  const limit = parseInt((searchParams.limit as string) || "20");
 
   try {
     const res = await getAllInvestments(adminId, {
@@ -63,7 +68,7 @@ const Investments = async ({
       </div>
     );
   } catch (error) {
-    console.error('Error loading investments:', error);
+    console.error("Error loading investments:", error);
     return (
       <div className="min-h-screen bg-wg-neutral flex items-center justify-center p-4">
         <Card className="bg-wg-neutral2 border-wg-accent/20 max-w-md">

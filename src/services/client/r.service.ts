@@ -1,11 +1,19 @@
 import { prisma } from "@/lib/prisma"
+import { resolveServerAuth } from "@/lib/server/auth0-server";
 import { DashboardOverviewData, CategoryDto, BankDetails, ApiResponse, TransactionResponse, TransactionQueryParams, InvestmentDto } from "@/types/type"
 import { mapCategoryToDto, mapInvestmentToDto, mapInvestmentWithCategoryToDto, mapTransactionToAdminRow, mapTransactionToDto, mapUserToDto } from '@/utils/mapper';
 import { InvestmentStatus, TransactionStatus, TransactionType } from "@prisma/client"
 
+async function authorizeUser(userId: string) {
+  const authUser = await resolveServerAuth()
+  if (authUser.user.id !== userId) throw new Error("Unauthorized")
+}
+
 export async function getDashboardOverview(
   userId: string
 ): Promise<DashboardOverviewData> {
+
+  await authorizeUser(userId)
 
   // 1️⃣ User
   const user = await prisma.user.findUniqueOrThrow({
@@ -107,8 +115,6 @@ export async function getDashboardOverview(
   };
 }
 
-
-
 export async function getAllInvestmentCategory(): Promise<
   ApiResponse<CategoryDto[]>
 > {
@@ -118,28 +124,6 @@ export async function getAllInvestmentCategory(): Promise<
     success: true,
     message: "Investment categories retrieved successfully",
     data: ic.map(mapCategoryToDto)
-  }
-}
-
-export async function getInvestmentCategory(
-  id: string
-): Promise<ApiResponse<CategoryDto | null>> {
-  const ic = await prisma.investmentCategory.findUnique({
-    where: { id }
-  })
-
-  if (!ic) {
-    return {
-      success: false,
-      message: "Failed to fetch data",
-      data: null,
-    }
-  }
-
-  return {
-    success: true,
-    message: "Investment category retrieved successfully",
-    data: mapCategoryToDto(ic),
   }
 }
 
@@ -167,6 +151,9 @@ export async function getTransactions(
   userId: string,
   query?: TransactionQueryParams
 ): Promise<ApiResponse<TransactionResponse>> {
+
+  await authorizeUser(userId)
+
   const page = Math.max(Number(query?.page) || 1, 1);
   const limit = Math.min(Number(query?.limit) || 20, 100);
   const skip = (page - 1) * limit;
@@ -241,8 +228,8 @@ export async function getTransactions(
 export async function getInvestments(
   userId: string,
 ): Promise<ApiResponse<InvestmentDto[] | null>> {
-
   try {
+    await authorizeUser(userId)
     const ivst = await prisma.investment.findMany({
       where: {
         userId: userId

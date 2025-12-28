@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { getAdminDashboardOverview } from "@/services/admin/r.service";
 import AdminDashboardClient from "../_components/AdminDashboardClient";
 import { AdminDashboardOverview } from "@/types/adminType";
-import { getServerUserId } from "@/lib/server/auth0-server";
+import { resolveServerAuth } from "@/lib/server/auth0-server";
 
 export const metadata: Metadata = {
   title: "Admin Dashboard | Water Groove",
@@ -34,7 +34,8 @@ export default async function DashboardPage() {
 
   try {
     // Get Auth0 user on server side
-    const adminId = await getServerUserId();
+    const resolved = await resolveServerAuth();
+    const adminId = resolved?.user?.id
 
     // Fetch dashboard data with timeout
     try {

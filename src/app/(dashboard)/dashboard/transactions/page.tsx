@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { TransactionQueryParams, TransactionResponse } from "@/types/type";
 import { getTransactions } from "@/services/client/r.service";
-import { getServerUserId } from "@/lib/server/auth0-server";
+import { resolveServerAuth } from "@/lib/server/auth0-server";
 import { TransactionStatus, TransactionType } from "@prisma/client";
 import TransactionClient from "../_components/TransactionClient";
 
@@ -18,7 +18,8 @@ const Transactions = async ({
   // Build query params from search params
   const queryParams: TransactionQueryParams = {
     page: typeof searchParams.page === "number" ? Number(searchParams.page) : 1,
-    limit: typeof searchParams.limit === "number" ? Number(searchParams.limit) : 20,
+    limit:
+      typeof searchParams.limit === "number" ? Number(searchParams.limit) : 20,
     type:
       typeof searchParams.type === "string"
         ? (searchParams.type as TransactionType)
@@ -31,8 +32,9 @@ const Transactions = async ({
     to: typeof searchParams.to === "string" ? searchParams.to : undefined,
   };
 
-  const userId = await getServerUserId();
-  const res = await getTransactions(userId, queryParams);
+  const { user } = await resolveServerAuth();
+
+  const res = await getTransactions(user.id, queryParams);
 
   const data = res?.data ?? {
     transactions: [],

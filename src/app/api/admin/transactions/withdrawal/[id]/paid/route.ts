@@ -1,10 +1,12 @@
-import { getServerAdminId } from "@/lib/server/auth0-server";
+import { resolveServerAuth } from "@/lib/server/auth0-server";
 import { paidWithdrawal } from "@/services/admin/cud.service";
 import { NextResponse } from "next/server";
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request,  context: { params: Promise<{ id: string; }> }) {
   try {
-    const txnId = (await params).id
+    const txnId = (await context.params).id
+    const resolved = await resolveServerAuth();
+    const adminId = resolved?.user?.id
 
     if (!txnId) {
       return NextResponse.json(
@@ -12,8 +14,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         { status: 400 }
       );
     }
-
-    const adminId = await getServerAdminId();
 
     const res = await paidWithdrawal(txnId, adminId);
 

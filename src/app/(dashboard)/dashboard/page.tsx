@@ -6,7 +6,7 @@ import {
   getAllInvestmentCategory,
   getDashboardOverview,
 } from "@/services/client/r.service";
-import { getServerUser } from "@/lib/server/auth0-server";
+import { resolveServerAuth } from "@/lib/server/auth0-server";
 import { DashboardOverviewData } from "@/types/type";
 
 export const metadata: Metadata = {
@@ -35,14 +35,14 @@ function formatDashboardData(data: DashboardOverviewData, authUser: any) {
 export default async function DashboardPage() {
   try {
     // Get Auth0 user on server side
-    const { authUser } = await getServerUser();
+    const { user } = await resolveServerAuth();
 
     // Fetch dashboard data
-    const dashboardData = await getDashboardOverview(!!authUser?.id ?  authUser?.id : '');
+    const dashboardData = await getDashboardOverview(user?.id);
     const investmemtCategoeies = await getAllInvestmentCategory();
 
     // Format and validate data
-    const formattedData = formatDashboardData(dashboardData, authUser);
+    const formattedData = formatDashboardData(dashboardData, user);
 
     return (
       <Suspense fallback={<DashboardSkeleton />}>
