@@ -12,22 +12,22 @@ import { Auth0User, AuthData } from "@/types/type";
 
 interface Props {
   children: React.ReactNode;
-  admin: Auth0User;
+  authUser: Auth0User;
 }
 
-export default function AdminDashboardShell({ children, admin }: Props) {
+export default function AdminDashboardShell({ children, authUser }: Props) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const authData: AuthData = {
     isLoading: false,
     error: undefined,
-    user: admin
+    user: authUser
       ? {
-          name: admin.name || admin.nickname || admin.email || "User",
-          picture: admin.picture || undefined,
-          email: admin.email || "",
-          role: (admin as any).role || "admin", // Cast to any if Auth0 admin has custom properties
+          name: authUser.fullName || authUser.nickname || "Admin",
+          picture: authUser.picture || undefined,
+          email: authUser.email || "",
+          role: (authUser as any).role || "admin", // Cast to any if Auth0 admin has custom properties
         }
       : undefined,
   };
