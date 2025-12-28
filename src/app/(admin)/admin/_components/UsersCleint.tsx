@@ -274,7 +274,7 @@ const UsersClient = ({ initialData, totalUsers }: UsersClientProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-wg-neutral p-6">
+    <div className="min-h-screen bg-wg-neutral">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatsCard

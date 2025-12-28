@@ -288,7 +288,7 @@ const RoisClient: React.FC<RoisClientProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-wg-neutral p-6">
+    <div className="min-h-screen bg-wg-neutral">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <StatsCard

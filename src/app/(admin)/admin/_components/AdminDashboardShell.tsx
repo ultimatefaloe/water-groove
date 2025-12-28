@@ -82,7 +82,7 @@ export default function AdminDashboardShell({ children, admin }: Props) {
         </header>
 
         {/* CONTENT */}
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-2 md:p-6">{children}</main>
 
         {/* FOOTER */}
         <footer className="border-t bg-white px-4 py-3 text-sm text-neutral-500 text-center">

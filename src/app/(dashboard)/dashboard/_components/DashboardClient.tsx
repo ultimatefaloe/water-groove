@@ -94,7 +94,7 @@ export default function DashboardClient({
   }, [activeInvestments, user.createdAt]);
 
   return (
-    <div className="space-y-6 px-2 sm:px-4">
+    <div className="space-y-6">
       {/* Main Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left Column */}
