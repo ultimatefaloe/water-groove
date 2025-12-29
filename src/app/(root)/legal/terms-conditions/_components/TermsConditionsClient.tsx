@@ -448,39 +448,9 @@ const TermsConditionsClient = () => {
               </p>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register">
-                <Button size="lg" className="bg-wg-secondary hover:bg-wg-secondary/90 text-wg-primary font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  Proceed to Registration
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/contact">
-                <Button size="lg" variant="outline" className="border-wg-neutral text-wg-primary hover:bg-wg-neutral/10 px-8 py-6 rounded-xl hover:text-white hover:scale-105 transition-all duration-300">
-                  Contact Legal Team
-                </Button>
-              </Link>
-            </div>
+           
             
-            <div className="mt-12 pt-8 border-t border-wg-neutral/20">
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-sm text-wg-neutral/70">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                 Support@watergrooveinvestment.com
-
-                </div>
-                <div className="hidden md:block">•</div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                 +234 803 502 6480
-                </div>
-                <div className="hidden md:block">•</div>
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Water Grove Legal Department
-                </div>
-              </div>
-            </div>
+           
           </div>
         </div>
       </section>
