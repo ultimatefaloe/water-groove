@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { InvestorTier, TransactionStatus, TransactionType, AdminRole, InvestmentStatus } from "@prisma/client"
 import { AdminTransactionRow } from "./adminType"
+import build from "next/dist/build"
 
 export enum InvestmentStatusDto {
   PENDING_PAYMENT = "PENDING_PAYMENT",
@@ -11,7 +10,6 @@ export enum InvestmentStatusDto {
   CANCELLED = "CANCELLED",
   REJECTED = "REJECTED",
 }
-
 
 
 // ==============================

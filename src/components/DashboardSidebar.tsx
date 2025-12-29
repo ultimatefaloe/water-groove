@@ -21,27 +21,16 @@ interface SidebarProps {
   pathname: string;
   onNavigate: () => void;
   navItem: NavLinks[];
+  secondaryNavItems: NavLinks[];
   authUser: AuthData;
 }
-
-const secondaryNavItems: NavLinks[] = [
-  {
-    title: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
-  },
-  {
-    title: "Support",
-    href: "/dashboard/support",
-    icon: Headset,
-  },
-];
 
 export function DashboardSidebar({
   pathname,
   onNavigate,
   navItem,
   authUser,
+  secondaryNavItems
 }: SidebarProps) {
   const router = useRouter();
 

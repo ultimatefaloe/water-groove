@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, Bell } from "lucide-react";
+import { Menu, Bell, Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { adminNavItems } from "@/config/navigations";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { Auth0User, AuthData } from "@/types/type";
+import { NavLinks } from "@/types/nav";
 
 interface Props {
   children: React.ReactNode;
@@ -32,6 +33,14 @@ export default function AdminDashboardShell({ children, authUser }: Props) {
       : undefined,
   };
 
+  const secondaryNavItems: NavLinks[] = [
+    // {
+    //   title: "Settings",
+    //   href: "/dashboard/settings",
+    //   icon: Settings,
+    // }
+  ];
+
   const pageTitle =
     adminNavItems.find((i) => pathname === i.href)?.title ?? "Dashboard";
 
@@ -43,6 +52,7 @@ export default function AdminDashboardShell({ children, authUser }: Props) {
           pathname={pathname}
           onNavigate={() => {}}
           navItem={adminNavItems}
+          secondaryNavItems={secondaryNavItems}
           authUser={authData}
         />
       </aside>
@@ -54,6 +64,7 @@ export default function AdminDashboardShell({ children, authUser }: Props) {
             pathname={pathname}
             onNavigate={() => setMobileOpen(false)}
             navItem={adminNavItems}
+            secondaryNavItems={secondaryNavItems}
             authUser={authData}
           />
         </SheetContent>
