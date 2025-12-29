@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, Bell } from "lucide-react";
+import { Menu, Bell, Settings, HeadsetIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { dashboardNavItems } from "@/config/navigations";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { AuthData, Auth0User } from "@/types/type";
+import { NavLinks } from "@/types/nav";
 
 interface Props {
   children: React.ReactNode;
@@ -31,6 +32,19 @@ export default function DashboardShell({ children, authUser }: Props) {
       : undefined,
   };
 
+  const secondaryNavItems: NavLinks[] = [
+  {
+    title: "Settings",
+    href: "/dashboard/settings",
+    icon: Settings,
+  },
+  {
+    title: "Support",
+    href: "/dashboard/support",
+    icon: HeadsetIcon,
+  },
+];
+
   const pageTitle =
     dashboardNavItems.find((i) => pathname === i.href)?.title ?? "Dashboard";
 
@@ -42,6 +56,7 @@ export default function DashboardShell({ children, authUser }: Props) {
           pathname={pathname}
           onNavigate={() => {}}
           navItem={dashboardNavItems}
+          secondaryNavItems={secondaryNavItems}
           authUser={authData}
         />
       </aside>
@@ -53,6 +68,7 @@ export default function DashboardShell({ children, authUser }: Props) {
             pathname={pathname}
             onNavigate={() => setMobileOpen(false)}
             navItem={dashboardNavItems}
+            secondaryNavItems={secondaryNavItems}
             authUser={authData}
           />
         </SheetContent>

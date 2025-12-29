@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Suspense } from "react";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import DashboardClient from "./_components/DashboardClient";
