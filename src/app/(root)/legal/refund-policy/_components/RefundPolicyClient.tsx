@@ -53,7 +53,7 @@ const RefundPolicyClient = () => {
       stage: 3,
       title: 'Approval & Processing',
       description: 'Request approved and queued for payment',
-      time: '24 Hours',
+      time: '24-48 Hours',
       status: 'Processing',
       icon: <CheckCircle className="h-5 w-5" />
     },
@@ -61,7 +61,7 @@ const RefundPolicyClient = () => {
       stage: 4,
       title: 'Payment Execution',
       description: 'Funds transferred to your bank account',
-      time: '1-3 Business Days',
+      time: '24-48 Hours',
       status: 'Completed',
       icon: <CreditCard className="h-5 w-5" />
     }
@@ -73,21 +73,21 @@ const RefundPolicyClient = () => {
       minWithdrawal: '₦10,000',
       maxWithdrawal: '₦200,000',
       processingFee: '₦500',
-      frequency: 'Weekly'
+      frequency: 'Monthly'
     },
     {
       category: 'Growth Groove',
       minWithdrawal: '₦25,000',
       maxWithdrawal: '₦500,000',
       processingFee: '₦1,000',
-      frequency: 'Weekly'
+      frequency: 'Monthly'
     },
     {
       category: 'Premium Groove',
       minWithdrawal: '₦50,000',
       maxWithdrawal: '₦1,000,000',
       processingFee: '₦2,000',
-      frequency: 'Bi-weekly'
+      frequency: 'Monthly'
     },
     {
       category: 'Elite Investor',
@@ -179,11 +179,7 @@ const RefundPolicyClient = () => {
                   Withdrawal Process <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link href="/dashboard">
-                <Button size="lg" variant="outline" className="border-wg-neutral text-wg-primary hover:bg-wg-neutral/10 px-8 py-6 rounded-xl hover:text-white hover:scale-105 transition-all duration-300">
-                  Go to Dashboard
-                </Button>
-              </Link>
+             
             </div>
           </div>
         </div>
@@ -270,8 +266,8 @@ const RefundPolicyClient = () => {
                     </p>
                   </div>
                   <div className="text-center">
-                    <div className="text-3xl md:text-4xl font-bold text-wg-secondary mb-2">3-7 Days</div>
-                    <div className="text-sm text-wg-primary/60">Business Days</div>
+                    <div className="text-3xl md:text-4xl font-bold text-wg-secondary mb-2">24-48 Hours</div>
+                    <div className="text-sm text-wg-primary/60">Business Hours</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Timer className="h-5 w-5 text-wg-accent" />
@@ -498,7 +494,7 @@ const RefundPolicyClient = () => {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-wg-primary/80">Standard Withdrawals</span>
-                        <Badge>3-7 Days</Badge>
+                        <Badge>24-48 Hours</Badge>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-wg-primary/80">Urgent Withdrawals*</span>
@@ -506,7 +502,7 @@ const RefundPolicyClient = () => {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-wg-primary/80">Refund Processing</span>
-                        <Badge variant="outline">10-17 Days</Badge>
+                        <Badge variant="outline">24-48 Hours</Badge>
                       </div>
                     </div>
                     <p className="text-xs text-wg-primary/60 mt-4">
@@ -569,40 +565,9 @@ const RefundPolicyClient = () => {
               </Card>
             </div>
             
-            <div className="bg-wg-neutral/10 backdrop-blur-sm rounded-2xl p-8 border border-wg-neutral/20">
-              <h3 className="text-xl font-bold text-wg-neutral mb-4">Policy Updates</h3>
-              <p className="text-wg-neutral/90 mb-6">
-                Water Grove reserves the right to modify these policies at any time. 
-                Users will be notified of significant changes via email and platform notifications.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/dashboard">
-                  <Button size="lg" className="bg-wg-secondary hover:bg-wg-secondary/90 text-wg-primary font-bold px-8 py-6 rounded-xl shadow-lg">
-                    Request Withdrawal
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link href="/legal/terms-conditions">
-                  <Button size="lg" variant="outline" className="border-wg-neutral text-wg-primary hover:bg-wg-neutral/10 px-8 py-6 rounded-xl hover:text-white">
-                    View Full Terms
-                  </Button>
-                </Link>
-              </div>
-            </div>
             
-            <div className="mt-12 pt-8 border-t border-wg-neutral/20">
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-sm text-wg-neutral/70">
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Water Grove Financial Operations
-                </div>
-                <div className="hidden md:block">•</div>
-                <div>Policy Version: RP-1.0</div>
-                <div className="hidden md:block">•</div>
-                <div>Effective: January 2025</div>
-              </div>
-            </div>
+            
+           
           </div>
         </div>
       </section>

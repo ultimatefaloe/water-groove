@@ -176,18 +176,7 @@ const InvestmentDisclaimerClient = () => {
               </p>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="#risk-understanding">
-                <Button size="lg" className="bg-red-500 hover:bg-red-600 text-wg-neutral font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  Understand The Risks <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/legal/terms-conditions">
-                <Button size="lg" variant="outline" className="border-wg-neutral text-wg-primary hover:bg-red-500/20 px-8 py-6 rounded-xl hover:text-white hover:scale-105 transition-all duration-300">
-                  Read Full Terms
-                </Button>
-              </Link>
-            </div>
+            
           </div>
         </div>
       </section>
@@ -512,35 +501,12 @@ const InvestmentDisclaimerClient = () => {
                     Contact us for any questions about investment risks before proceeding
                   </p>
                   
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link href="/auth/login">
-                      <Button size="lg" className="bg-wg-primary hover:bg-wg-primary/90 text-wg-neutral font-bold px-8 py-6 rounded-xl shadow-lg">
-                        Proceed to Registration
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </Button>
-                    </Link>
-                    <Link href="/contact">
-                      <Button size="lg" variant="outline" className="border-wg-primary text-wg-primary hover:bg-wg-primary hover:text-wg-neutral px-8 py-6 rounded-xl">
-                        Contact Support
-                      </Button>
-                    </Link>
-                  </div>
+                  
                 </div>
               </CardContent>
             </Card>
             
-            <div className="mt-8 text-center">
-              <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-sm text-wg-primary/60">
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Water Grove Risk Management Department
-                </div>
-                <div className="hidden md:block">•</div>
-                <div>Last Updated: March 2024</div>
-                <div className="hidden md:block">•</div>
-                <div>Version: DIS-2.1</div>
-              </div>
-            </div>
+            
           </div>
         </div>
       </section>

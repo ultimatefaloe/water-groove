@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react/no-unescaped-entities */
 'use client';
@@ -12,7 +13,6 @@ import {
   Send, 
   MessageSquare,
   User,
-  Building,
   CheckCircle,
   ArrowRight,
   Shield,
@@ -22,30 +22,45 @@ import {
   TrendingUp,
   ChevronRight,
   Eye,
-  Target
+  Target,
+  MessageCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+
+// EmailJS configuration
+const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || 'your_service_id';
+const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || 'your_template_id';
+const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || 'your_public_key';
 
 const ContactClient = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    company: '',
     subject: '',
     message: '',
-    category: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isEmailJSLoaded, setIsEmailJSLoaded] = useState(false);
+
+  // WhatsApp contact info
+  const WHATSAPP_NUMBER = '2348035026480'; // Remove leading zero and country code
+  const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
+  
+  // Phone number for direct call (with proper formatting)
+  const PHONE_NUMBER = '+2348035026480';
+  const PHONE_LINK = `tel:${PHONE_NUMBER}`;
+  
+  // Email address
+  const EMAIL_ADDRESS = 'support@watergrooveinvestment.com';
 
   const contactInfo = [
     {
@@ -56,14 +71,14 @@ const ContactClient = () => {
     },
     {
       icon: <Phone className="h-8 w-8" />,
-      title: 'Phone Numbers',
-      details: ['+234 800 123 4567', '+234 900 987 6543'],
+      title: 'Phone Support',
+      details: ['+234 803 502 6480', 'Available 24/7'],
       color: 'from-emerald-500/20 to-green-500/20'
     },
     {
       icon: <Mail className="h-8 w-8" />,
-      title: 'Email Address',
-      details: ['info@watergrove.com', 'support@watergrove.com'],
+      title: 'Email Support',
+      details: ['support@watergrooveinvestment.com', 'Response within 24h'],
       color: 'from-orange-500/20 to-amber-500/20'
     },
     {
@@ -74,47 +89,38 @@ const ContactClient = () => {
     }
   ];
 
-  const contactCategories = [
-    { value: 'general', label: 'General Inquiry' },
-    { value: 'investment', label: 'Investment Information' },
-    { value: 'support', label: 'Technical Support' },
-    { value: 'partnership', label: 'Partnership Opportunities' },
-    { value: 'feedback', label: 'Feedback & Suggestions' },
-    { value: 'other', label: 'Other' }
-  ];
-
   const teamDepartments = [
     {
       department: 'Investment Advisory',
-      contact: 'advisory@watergrove.com',
-      phone: '+234 800 123 4001',
+      contact: 'support@watergrooveinvestment.com',
+      phone: '+234 803 502 6480',
       icon: <TrendingUp className="h-6 w-6" />,
       color: 'from-blue-500/20 to-cyan-500/20'
     },
     {
       department: 'Client Relations',
-      contact: 'clients@watergrove.com',
-      phone: '+234 800 123 4002',
+      contact: 'support@watergrooveinvestment.com',
+      phone: '+234 803 502 6480',
       icon: <Users className="h-6 w-6" />,
       color: 'from-emerald-500/20 to-green-500/20'
     },
     {
       department: 'Technical Support',
-      contact: 'support@watergrove.com',
-      phone: '+234 800 123 4003',
+      contact: 'support@watergrooveinvestment.com',
+      phone: '+234 803 502 6480',
       icon: <Headset className="h-6 w-6" />,
       color: 'from-orange-500/20 to-amber-500/20'
     },
     {
-      department: 'Compliance',
-      contact: 'compliance@watergrove.com',
-      phone: '+234 800 123 4004',
+      department: 'Withdrawal Support',
+      contact: 'support@watergrooveinvestment.com',
+      phone: '+234 803 502 6480',
       icon: <Shield className="h-6 w-6" />,
       color: 'from-rose-500/20 to-pink-500/20'
     }
   ];
 
-  // Fixed floating particle positions (no random values)
+  // Fixed floating particle positions
   const fixedParticles = [
     { left: 10, top: 20, size: 8 },
     { left: 25, top: 60, size: 12 },
@@ -132,31 +138,72 @@ const ContactClient = () => {
 
   useEffect(() => {
     setIsClient(true);
+    
+    // Load EmailJS script
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
+    script.async = true;
+    
+    script.onload = () => {
+      // Initialize EmailJS
+      if (window.emailjs) {
+        window.emailjs.init(EMAILJS_PUBLIC_KEY);
+        setIsEmailJSLoaded(true);
+      }
+    };
+    
+    document.head.appendChild(script);
+    
+    return () => {
+      document.head.removeChild(script);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        company: '',
-        subject: '',
-        message: '',
-        category: ''
-      });
-    }, 3000);
+    try {
+      // If EmailJS is configured, use it
+      if (isEmailJSLoaded && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID) {
+        await window.emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          {
+            from_name: formData.name,
+            from_email: formData.email,
+            phone: formData.phone,
+            subject: formData.subject,
+            message: formData.message,
+            to_email: EMAIL_ADDRESS,
+          }
+        );
+      } else {
+        // Fallback to regular form submission
+        console.log('EmailJS not configured, would send:', formData);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+      
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      
+      // Reset form after 5 seconds
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: '',
+        });
+      }, 5000);
+      
+    } catch (error) {
+      console.error('Error sending email:', error);
+      setIsSubmitting(false);
+      alert('There was an error sending your message. Please try again or contact us directly.');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -166,14 +213,24 @@ const ContactClient = () => {
     }));
   };
 
+  const openWhatsApp = () => {
+    const message = `Hello Water Grove,\n\nI would like to inquire about:\n\n`;
+    window.open(`${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const openWhatsAppWithCustomMessage = (prefill: string) => {
+    const message = `Hello Water Grove,\n\nI would like to inquire about: ${prefill}\n\n`;
+    window.open(`${WHATSAPP_LINK}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-wg-neutral via-white to-wg-primary/5">
-      {/* Hero Section - Same as homepage */}
+      {/* Hero Section */}
       <section className="relative pt-20 pb-16 md:pt-24 md:pb-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-wg-primary2 via-wg-primary to-wg-primary/90"></div>
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-wg-secondary via-wg-accent to-wg-secondary"></div>
         
-        {/* Floating particles - FIXED: Use static values */}
+        {/* Floating particles */}
         {isClient && (
           <div className="absolute inset-0 overflow-hidden">
             {fixedParticles.map((particle, i) => (
@@ -186,7 +243,7 @@ const ContactClient = () => {
                   width: `${particle.size}px`,
                   height: `${particle.size}px`,
                   animationDelay: `${i * 0.5}s`,
-                  animationDuration: `${10 + (i % 5) * 2}s`, // Fixed pattern, not random
+                  animationDuration: `${10 + (i % 5) * 2}s`,
                 }}
               />
             ))}
@@ -216,12 +273,19 @@ const ContactClient = () => {
                   Send Message <Send className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <a href="tel:+2348001234567">
+              <a href={PHONE_LINK}>
                 <Button variant="outline" className="border-wg-neutral text-wg-primary hover:bg-wg-neutral/10 px-8 py-6 rounded-xl hover:text-white hover:scale-105 transition-all duration-300">
                   <Phone className="mr-2 h-5 w-5" />
                   Call Now
                 </Button>
               </a>
+              <Button 
+                onClick={openWhatsApp}
+                className="bg-green-600 hover:bg-green-700 text-wg-neutral font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
+                <MessageCircle className="mr-2 h-5 w-5" />
+                WhatsApp
+              </Button>
             </div>
           </div>
         </div>
@@ -254,9 +318,33 @@ const ContactClient = () => {
                     </div>
                     <h3 className="font-bold text-wg-primary mb-3 text-lg">{info.title}</h3>
                     <div className="space-y-1">
-                      {info.details.map((detail, idx) => (
-                        <p key={idx} className="text-sm text-wg-primary/70">{detail}</p>
-                      ))}
+                      {info.details.map((detail, idx) => {
+                        if (index === 1 && idx === 0) { // Phone number
+                          return (
+                            <a 
+                              key={idx} 
+                              href={PHONE_LINK}
+                              className="text-sm text-wg-primary/70 hover:text-wg-accent transition-colors block"
+                            >
+                              {detail}
+                            </a>
+                          );
+                        }
+                        if (index === 2 && idx === 0) { // Email address
+                          return (
+                            <a 
+                              key={idx} 
+                              href={`mailto:${detail}`}
+                              className="text-sm text-wg-primary/70 hover:text-wg-accent transition-colors block"
+                            >
+                              {detail}
+                            </a>
+                          );
+                        }
+                        return (
+                          <p key={idx} className="text-sm text-wg-primary/70">{detail}</p>
+                        );
+                      })}
                     </div>
                   </div>
                 </CardContent>
@@ -338,61 +426,21 @@ const ContactClient = () => {
                         </div>
                       </div>
                       
-                      <div className="grid md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label htmlFor="phone" className="text-wg-primary font-medium">
-                            Phone Number
-                          </Label>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-3 h-4 w-4 text-wg-primary/50" />
-                            <Input
-                              id="phone"
-                              name="phone"
-                              value={formData.phone}
-                              onChange={handleChange}
-                              placeholder="+234 800 123 4567"
-                              className="pl-10 bg-white border-wg-primary/20 text-wg-primary focus:border-wg-accent"
-                            />
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="company" className="text-wg-primary font-medium">
-                            Company
-                          </Label>
-                          <div className="relative">
-                            <Building className="absolute left-3 top-3 h-4 w-4 text-wg-primary/50" />
-                            <Input
-                              id="company"
-                              name="company"
-                              value={formData.company}
-                              onChange={handleChange}
-                              placeholder="Your company name"
-                              className="pl-10 bg-white border-wg-primary/20 text-wg-primary focus:border-wg-accent"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
                       <div className="space-y-2">
-                        <Label htmlFor="category" className="text-wg-primary font-medium">
-                          Inquiry Category *
+                        <Label htmlFor="phone" className="text-wg-primary font-medium">
+                          Phone Number
                         </Label>
-                        <Select
-                          value={formData.category}
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-                        >
-                          <SelectTrigger className="bg-white border-wg-primary/20 text-wg-primary focus:border-wg-accent">
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {contactCategories.map((category) => (
-                              <SelectItem key={category.value} value={category.value}>
-                                {category.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-3 h-4 w-4 text-wg-primary/50" />
+                          <Input
+                            id="phone"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            placeholder="+234 803 502 6480"
+                            className="pl-10 bg-white border-wg-primary/20 text-wg-primary focus:border-wg-accent"
+                          />
+                        </div>
                       </div>
                       
                       <div className="space-y-2">
@@ -481,185 +529,67 @@ const ContactClient = () => {
                       <p className="text-wg-primary/70 text-sm">
                         Speak directly with our investment specialists
                       </p>
-                      <a href="tel:+2348001234567" className="text-wg-primary font-medium hover:text-wg-accent transition-colors">
-                        +234 800 123 4567
+                      <a href={PHONE_LINK} className="text-wg-primary font-medium hover:text-wg-accent transition-colors">
+                        +234 803 502 6480
                       </a>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-4 p-4 rounded-lg bg-white border border-wg-primary/10 hover:border-wg-accent/50 transition-colors">
-                    <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-500/10 to-green-500/10">
-                      <Mail className="h-5 w-5 text-wg-secondary" />
+                    <div className="p-3 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10">
+                      <MessageCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-wg-primary">WhatsApp Chat</h4>
+                      <p className="text-wg-primary/70 text-sm">
+                        Chat with us instantly on WhatsApp
+                      </p>
+                      <Button 
+                        onClick={openWhatsApp}
+                        variant="outline" 
+                        className="border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 mt-2"
+                      >
+                        Start WhatsApp Chat
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 p-4 rounded-lg bg-white border border-wg-primary/10 hover:border-wg-accent/50 transition-colors">
+                    <div className="p-3 rounded-lg bg-gradient-to-br from-orange-500/10 to-amber-500/10">
+                      <Mail className="h-5 w-5 text-wg-primary" />
                     </div>
                     <div>
                       <h4 className="font-bold text-wg-primary">Email Support</h4>
                       <p className="text-wg-primary/70 text-sm">
                         Get detailed responses via email
                       </p>
-                      <a href="mailto:support@watergrove.com" className="text-wg-primary font-medium hover:text-wg-accent transition-colors">
-                        support@watergrove.com
+                      <a href={`mailto:${EMAIL_ADDRESS}`} className="text-wg-primary font-medium hover:text-wg-accent transition-colors">
+                        {EMAIL_ADDRESS}
                       </a>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-4 p-4 rounded-lg bg-white border border-wg-primary/10 hover:border-wg-accent/50 transition-colors">
-                    <div className="p-3 rounded-lg bg-gradient-to-br from-orange-500/10 to-amber-500/10">
-                      <Clock className="h-5 w-5 text-wg-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-wg-primary">Live Chat</h4>
-                      <p className="text-wg-primary/70 text-sm">
-                        Chat with our support team in real-time
-                      </p>
-                      <Button variant="outline" className="border-wg-primary text-wg-primary hover:bg-wg-primary/10 mt-2 hover:border-wg-accent">
-                        Start Live Chat
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
               
-              {/* Department Contacts */}
-              <Card className="bg-white border border-wg-primary/10">
-                <CardHeader>
-                  <CardTitle className="text-xl text-wg-primary">Department Contacts</CardTitle>
-                  <CardDescription className="text-wg-primary/70">
-                    Reach out to specific teams for specialized assistance
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="space-y-4">
-                    {teamDepartments.map((dept, index) => (
-                      <div key={index} className="p-4 rounded-lg border border-wg-primary/10 hover:border-wg-accent/50 transition-colors group">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-3 rounded-lg bg-gradient-to-br ${dept.color}`}>
-                              <div className="text-wg-primary group-hover:text-wg-accent transition-colors duration-300">
-                                {dept.icon}
-                              </div>
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-wg-primary">{dept.department}</h4>
-                              <div className="space-y-1 mt-2">
-                                <a href={`mailto:${dept.contact}`} className="text-sm text-wg-primary/70 hover:text-wg-accent block transition-colors">
-                                  {dept.contact}
-                                </a>
-                                <a href={`tel:${dept.phone}`} className="text-sm text-wg-primary/70 hover:text-wg-accent block transition-colors">
-                                  {dept.phone}
-                                </a>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              
             </div>
           </div>
         </div>
       </section>
 
-      {/* Map & Location */}
-      <section className="py-20 bg-gradient-to-r from-wg-primary/5 via-wg-secondary/5 to-wg-primary/5">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-wg-primary mb-4">
-              Visit Our <span className="text-wg-secondary">Office</span>
-            </h2>
-            <p className="text-lg text-wg-primary/70 max-w-2xl mx-auto">
-              Schedule an in-person consultation at our headquarters in Lagos
-            </p>
-          </div>
-          
-          <div className="max-w-6xl mx-auto">
-            {/* Map Placeholder */}
-            <div className="rounded-2xl overflow-hidden border border-wg-primary/20 shadow-xl">
-              <div className="h-[400px] bg-gradient-to-br from-wg-primary/10 to-wg-secondary/10 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="p-4 rounded-full bg-white/20 backdrop-blur-sm inline-block mb-4">
-                    <MapPin className="h-12 w-12 text-wg-primary" />
-                  </div>
-                  <h3 className="text-xl font-bold text-wg-primary mb-2">Water Grove Headquarters</h3>
-                  <p className="text-wg-primary/70">123 Investment Plaza, Victoria Island, Lagos</p>
-                  <Button className="mt-6 bg-wg-primary hover:bg-wg-primary/90 text-wg-neutral font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <Globe className="mr-2 h-4 w-4" />
-                    Open in Google Maps
-                  </Button>
-                </div>
-              </div>
-            </div>
-            
-            {/* Location Details */}
-            <div className="grid md:grid-cols-3 gap-6 mt-8">
-              <Card className="bg-white border border-wg-primary/10 hover:border-wg-accent/50 transition-colors">
-                <CardContent className="p-6">
-                  <h4 className="font-bold text-wg-primary mb-3">Parking Information</h4>
-                  <ul className="space-y-2 text-sm text-wg-primary/70">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-wg-secondary mt-0.5 flex-shrink-0" />
-                      <span>Dedicated visitor parking available</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-wg-secondary mt-0.5 flex-shrink-0" />
-                      <span>Underground parking with security</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-wg-secondary mt-0.5 flex-shrink-0" />
-                      <span>Free parking for scheduled meetings</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white border border-wg-primary/10 hover:border-wg-accent/50 transition-colors">
-                <CardContent className="p-6">
-                  <h4 className="font-bold text-wg-primary mb-3">Security Protocol</h4>
-                  <ul className="space-y-2 text-sm text-wg-primary/70">
-                    <li className="flex items-start gap-2">
-                      <Shield className="h-4 w-4 text-wg-accent mt-0.5 flex-shrink-0" />
-                      <span>Photo ID required for entry</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Shield className="h-4 w-4 text-wg-accent mt-0.5 flex-shrink-0" />
-                      <span>Pre-registration recommended</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Shield className="h-4 w-4 text-wg-accent mt-0.5 flex-shrink-0" />
-                      <span>Security screening at entrance</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white border border-wg-primary/10 hover:border-wg-accent/50 transition-colors">
-                <CardContent className="p-6">
-                  <h4 className="font-bold text-wg-primary mb-3">Best Time to Visit</h4>
-                  <ul className="space-y-2 text-sm text-wg-primary/70">
-                    <li className="flex items-start gap-2">
-                      <Clock className="h-4 w-4 text-wg-primary mt-0.5 flex-shrink-0" />
-                      <span>Weekdays: 9 AM - 5 PM</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Clock className="h-4 w-4 text-wg-primary mt-0.5 flex-shrink-0" />
-                      <span>Schedule appointments in advance</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Clock className="h-4 w-4 text-wg-primary mt-0.5 flex-shrink-0" />
-                      <span>Allow 30 minutes before meeting</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* WhatsApp Floating Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          onClick={openWhatsApp}
+          className="h-14 w-14 rounded-full bg-green-600 hover:bg-green-700 text-wg-neutral shadow-xl hover:shadow-2xl transition-all duration-300 animate-bounce"
+          size="icon"
+        >
+          <MessageCircle className="h-6 w-6" />
+        </Button>
+      </div>
 
-      {/* CTA Section - Same as homepage */}
+      {/* CTA Section */}
       <section className="py-20 bg-gradient-to-br from-wg-primary2 via-wg-primary to-wg-primary/90 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-64 h-64 bg-wg-accent/10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-wg-secondary/10 rounded-full translate-x-1/3 translate-y-1/3"></div>
@@ -687,13 +617,13 @@ const ContactClient = () => {
                   <div className="p-2 rounded-lg bg-wg-accent/20">
                     <Clock className="h-5 w-5 text-wg-accent" />
                   </div>
-                  <span className="text-wg-neutral font-medium">24/7 Response</span>
+                  <span className="text-wg-neutral font-medium">24/7 Support</span>
                 </div>
                 <div className="flex items-center gap-3 justify-center">
                   <div className="p-2 rounded-lg bg-wg-secondary/20">
                     <Eye className="h-5 w-5 text-wg-secondary" />
                   </div>
-                  <span className="text-wg-neutral font-medium">Transparent Support</span>
+                  <span className="text-wg-neutral font-medium">Transparent Process</span>
                 </div>
               </div>
             </div>
@@ -704,11 +634,14 @@ const ContactClient = () => {
                   Start Investing Today
                 </Button>
               </Link>
-              <a href="mailto:info@watergrove.com">
-                <Button size="lg" variant="outline" className="border-wg-neutral text-wg-primary hover:bg-wg-neutral/10 px-8 py-6 rounded-xl hover:text-white hover:scale-105 transition-all duration-300">
-                  Email Our Team
-                </Button>
-              </a>
+              <Button 
+                onClick={openWhatsApp}
+                size="lg" 
+                className="bg-green-600 hover:bg-green-700 text-wg-neutral font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
+                <MessageCircle className="mr-2 h-5 w-5" />
+                Chat on WhatsApp
+              </Button>
             </div>
             
             {/* Risk disclaimer */}
@@ -737,9 +670,29 @@ const ContactClient = () => {
         .animate-float {
           animation: float 6s ease-in-out infinite;
         }
+        
+        .animate-bounce {
+          animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
       `}</style>
     </div>
   );
 };
+
+// Add EmailJS types to window
+declare global {
+  interface Window {
+    emailjs: any;
+  }
+}
 
 export default ContactClient;

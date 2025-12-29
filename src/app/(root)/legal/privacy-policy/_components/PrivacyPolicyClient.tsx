@@ -171,7 +171,7 @@ const PrivacyPolicyClient = () => {
                   </div>
                   <div className="text-center">
                     <div className="text-sm text-wg-primary/60 mb-2">Applicable To</div>
-                    <div className="text-2xl font-bold text-wg-primary">All Users</div>
+                    <div className="text-2xl font-bold text-wg-primary">All Investors</div>
                   </div>
                 </div>
               </CardContent>
