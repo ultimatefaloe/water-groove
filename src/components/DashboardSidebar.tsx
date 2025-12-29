@@ -30,7 +30,7 @@ export function DashboardSidebar({
   onNavigate,
   navItem,
   authUser,
-  secondaryNavItems
+  secondaryNavItems,
 }: SidebarProps) {
   const router = useRouter();
 
@@ -48,6 +48,19 @@ export function DashboardSidebar({
       .toUpperCase()
       .slice(0, 2);
   };
+
+  const SUPPORT_MESSAGE = encodeURIComponent(
+    `Hello Water Groove Support Team,
+
+    I need assistance regarding my investment account.
+    Please assign this message to my line manager for prompt support.
+
+    Thank you.`
+  );
+  const WHATSAPP_NUMBER = "2348035026480";
+
+  const getSupportWhatsappLink = () =>
+    `https://wa.me/${WHATSAPP_NUMBER}?text=${SUPPORT_MESSAGE}`;
 
   return (
     <div className="flex h-screen w-64 lg:w-72 flex-col fixed bg-wg-neutral border-r border-wg-accent">
@@ -98,8 +111,8 @@ export function DashboardSidebar({
             return (
               <Link
                 key={item.href}
-                href={item.href}
-                onClick={onNavigate}
+                href={item.title === "Support" ? '#' : item.href}
+                onClick={item.title === "Support" ? getSupportWhatsappLink : onNavigate}
                 className={clsx(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
                   isActive
