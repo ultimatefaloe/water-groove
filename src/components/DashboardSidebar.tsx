@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Image from "next/image";
 import { AuthData } from "@/types/type";
+import { Button } from "./ui/button";
 
 interface SidebarProps {
   pathname: string;
@@ -109,20 +110,41 @@ export function DashboardSidebar({
             const Icon = item.icon;
 
             return (
-              <Link
-                key={item.href}
-                href={item.title === "Support" ? '#' : item.href}
-                onClick={item.title === "Support" ? getSupportWhatsappLink : onNavigate}
-                className={clsx(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
-                  isActive
-                    ? "bg-wg-primary text-wg-secondary"
-                    : "text-wg-primary hover:bg-wg-secondary/50 hover:text-wg-primary"
+              <>
+                {item.title === "Support" ? (
+                  <Button
+                    key="support"
+                    variant="ghost"
+                    className={clsx(
+                      "w-full justify-start h-auto px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                      "text-wg-primary hover:bg-wg-secondary/50 hover:text-wg-primary"
+                    )}
+                    onClick={getSupportWhatsappLink}
+                  >
+                    {Icon && <Icon className="h-4 w-4 mr-3" />}
+                    <span>{item.title}</span>
+                  </Button>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.title === "Support" ? "#" : item.href}
+                    onClick={
+                      item.title === "Support"
+                        ? getSupportWhatsappLink
+                        : onNavigate
+                    }
+                    className={clsx(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
+                      isActive
+                        ? "bg-wg-primary text-wg-secondary"
+                        : "text-wg-primary hover:bg-wg-secondary/50 hover:text-wg-primary"
+                    )}
+                  >
+                    {Icon && <Icon className="h-4 w-4" />}
+                    <span className="font-medium">{item.title}</span>
+                  </Link>
                 )}
-              >
-                {Icon && <Icon className="h-4 w-4" />}
-                <span className="font-medium">{item.title}</span>
-              </Link>
+              </>
             );
           })}
         </nav>
