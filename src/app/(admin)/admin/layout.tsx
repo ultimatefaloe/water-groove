@@ -9,7 +9,7 @@ export default async function AdminLayout({
   const { user } = await requireAdmin();
 
   return (
-    <AdminDashboardShell admin={user}>
+    <AdminDashboardShell authUser={user}>
       {children}
     </AdminDashboardShell>
   );

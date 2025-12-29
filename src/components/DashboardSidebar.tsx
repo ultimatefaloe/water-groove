@@ -35,7 +35,6 @@ const secondaryNavItems: NavLinks[] = [
     href: "/dashboard/support",
     icon: Headset,
   },
-  
 ];
 
 export function DashboardSidebar({

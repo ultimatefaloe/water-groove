@@ -11,7 +11,7 @@ export function isAdminRole(
 export async function requireAdmin() {
   const ctx = await resolveServerAuth();
 
-  if (!ctx.user) redirect('/auth/login');
+  if (!ctx.user) redirect('/api/auth/login');
   if (!isAdminRole(ctx.role)) redirect('/dashboard');
 
   return ctx;
@@ -20,7 +20,7 @@ export async function requireAdmin() {
 export async function requireUser() {
   const ctx = await resolveServerAuth();
 
-  if (!ctx.user) redirect('/auth/login');
+  if (!ctx.user) redirect('/api/auth/login');
   if (isAdminRole(ctx.role)) redirect('/admin/dashboard');
 
   return ctx;

@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Manage and monitor all penalty transactions",
 };
 
+export const dynamic = 'force-dynamic';
+
 const page = async ({
   searchParams,
 }: {
