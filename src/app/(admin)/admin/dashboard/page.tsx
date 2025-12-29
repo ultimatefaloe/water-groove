@@ -5,6 +5,8 @@ import AdminDashboardClient from "../_components/AdminDashboardClient";
 import { AdminDashboardOverview } from "@/types/adminType";
 import { resolveServerAuth } from "@/lib/server/auth0-server";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "Admin Dashboard | Water Groove",
   description: "Secure your future with water groove investment",

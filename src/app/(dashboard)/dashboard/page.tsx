@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   description: "Secure your future with water groove investment",
 };
 
+export const dynamic = 'force-dynamic';
+
+
 // Helper function to format the dashboard data with proper types
 function formatDashboardData(data: DashboardOverviewData, authUser: any) {
   return {
