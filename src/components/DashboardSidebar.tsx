@@ -114,7 +114,7 @@ export function DashboardSidebar({
               <>
                 {item.title === "Support" ? (
                   <Button
-                    key="support"
+                    key={item.href}
                     variant="ghost"
                     className={clsx(
                       "w-full justify-start h-auto px-3 py-2 rounded-lg text-sm font-medium transition-all",

@@ -7,11 +7,6 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // const { user } = await requireUser();
-  const user = {
-    fullName: 'Tunmise',
-    email: "ultimatefaloe@g.com",
-    picture: ".."
-  }
+  const { user } = await requireUser();
   return <DashboardShell authUser={user}>{children}</DashboardShell>;
 }

@@ -91,6 +91,16 @@ export async function createDepositService({
         }
       })
 
+      await tx.user.update({
+        where: {
+          id: userId
+        },
+        data: {
+          investmentCategoryId: data?.id,
+          updatedAt: new Date()
+        }
+      })
+
       await tx.transaction.create({
         data: {
           userId,

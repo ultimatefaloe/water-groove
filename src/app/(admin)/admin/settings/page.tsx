@@ -1,14 +1,14 @@
 import { Metadata } from "next";
-import SettingsClient from "../_components/SettingsClient";
 import { getProfile } from "@/services/client/r.service";
 import { resolveServerAuth } from "@/lib/server/auth0-server";
+import SettingsClient from "@/app/(dashboard)/dashboard/_components/SettingsClient";
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: "Settings | Water Groove",
   description: "Manage your account settings and profile",
 };
-
-export const dynamic = 'force-dynamic';
 
 const Settings = async () => {
   try {
