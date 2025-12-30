@@ -46,7 +46,7 @@ export default function DashboardShell({ children, authUser }: Props) {
 ];
 
   const pageTitle =
-    dashboardNavItems.find((i) => pathname === i.href)?.title ?? "Dashboard";
+    dashboardNavItems.find((i) => pathname === i.href)?.title || (secondaryNavItems.find((i)=> pathname === i.href)?.title);
 
   return (
     <div className="flex min-h-screen bg-white">
