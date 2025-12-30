@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Manage your account settings and profile",
 };
 
+export const dynamic = 'force-dynamic';
+
 const Settings = async () => {
   try {
     const { user } = await resolveServerAuth();
