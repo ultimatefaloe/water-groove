@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Image from "next/image";
 import { AuthData } from "@/types/type";
+import { Button } from "./ui/button";
 
 interface SidebarProps {
   pathname: string;
@@ -30,7 +31,7 @@ export function DashboardSidebar({
   onNavigate,
   navItem,
   authUser,
-  secondaryNavItems
+  secondaryNavItems,
 }: SidebarProps) {
   const router = useRouter();
 
@@ -48,6 +49,19 @@ export function DashboardSidebar({
       .toUpperCase()
       .slice(0, 2);
   };
+
+  const SUPPORT_MESSAGE = encodeURIComponent(
+    `Hello Water Groove Support Team,
+
+    I need assistance regarding my investment account.
+    Please assign this message to my line manager for prompt support.
+
+    Thank you.`
+  );
+  const WHATSAPP_NUMBER = "2348035026480";
+
+  const getSupportWhatsappLink = () =>
+    `https://wa.me/${WHATSAPP_NUMBER}?text=${SUPPORT_MESSAGE}`;
 
   return (
     <div className="flex h-screen w-64 lg:w-72 flex-col fixed bg-wg-neutral border-r border-wg-accent">
@@ -96,20 +110,41 @@ export function DashboardSidebar({
             const Icon = item.icon;
 
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onNavigate}
-                className={clsx(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
-                  isActive
-                    ? "bg-wg-primary text-wg-secondary"
-                    : "text-wg-primary hover:bg-wg-secondary/50 hover:text-wg-primary"
+              <>
+                {item.title === "Support" ? (
+                  <Button
+                    key="support"
+                    variant="ghost"
+                    className={clsx(
+                      "w-full justify-start h-auto px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                      "text-wg-primary hover:bg-wg-secondary/50 hover:text-wg-primary"
+                    )}
+                    onClick={getSupportWhatsappLink}
+                  >
+                    {Icon && <Icon className="h-4 w-4 mr-3" />}
+                    <span>{item.title}</span>
+                  </Button>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.title === "Support" ? "#" : item.href}
+                    onClick={
+                      item.title === "Support"
+                        ? getSupportWhatsappLink
+                        : onNavigate
+                    }
+                    className={clsx(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
+                      isActive
+                        ? "bg-wg-primary text-wg-secondary"
+                        : "text-wg-primary hover:bg-wg-secondary/50 hover:text-wg-primary"
+                    )}
+                  >
+                    {Icon && <Icon className="h-4 w-4" />}
+                    <span className="font-medium">{item.title}</span>
+                  </Link>
                 )}
-              >
-                {Icon && <Icon className="h-4 w-4" />}
-                <span className="font-medium">{item.title}</span>
-              </Link>
+              </>
             );
           })}
         </nav>
