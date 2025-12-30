@@ -31,8 +31,10 @@ import {
   RefreshCw,
   ExternalLink,
   Edit,
+  Banknote,
 } from "lucide-react";
 import { UserProfileSettings } from "@/types/type";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface SettingsClientProps {
   profile: UserProfileSettings;
@@ -46,36 +48,9 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  // Format date
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   // Format percentage
   const formatPercentage = (rate: number) => {
     return `${(rate * 100).toFixed(2)}%`;
-  };
-
-  // Handle reset password (Auth0)
-  const handleResetPassword = () => {
-    // Auth0 password reset URL - replace with your actual Auth0 domain
-    const auth0Domain = process.env.NEXT_PUBLIC_AUTH0_DOMAIN || "your-domain.auth0.com";
-    const resetUrl = `https://${auth0Domain}/u/reset-password`;
-    window.open(resetUrl, "_blank");
   };
 
   // Handle edit profile
@@ -118,6 +93,8 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
     return <LoadingSkeleton />;
   }
 
+  console.log(profile)
+
   return (
     <div className="min-h-screen bg-wg-neutral p-4 md:p-6">
       {/* Fallback Data Alert */}
@@ -126,18 +103,11 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
           <AlertCircle className="h-4 w-4 text-yellow-500" />
           <AlertTitle className="text-yellow-700">Demo Mode</AlertTitle>
           <AlertDescription className="text-yellow-600/80">
-            Showing demo profile data. In production, this will show your actual profile.
+            Showing demo profile data. In production, this will show your actual
+            profile.
           </AlertDescription>
         </Alert>
       )}
-
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-wg-primary">Account Settings</h1>
-        <p className="text-wg-primary/60 mt-2">
-          Manage your profile and account preferences
-        </p>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Profile Card */}
@@ -147,18 +117,18 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-wg-primary flex items-center gap-2">
-                  <User className="h-5 w-5 text-wg-accent" />
+                  <User className="h-5 w-5 text-wg-primary" />
                   Profile Information
                 </CardTitle>
-                <Button
+                {/* <Button
                   variant="outline"
                   size="sm"
                   onClick={handleEditProfile}
-                  className="border-wg-accent/30 text-wg-accent hover:bg-wg-accent/10"
+                  className="border-wg-accent/30 bg-wg-primary text-wg-neutral hover:bg-wg-secondary"
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Profile
-                </Button>
+                </Button> */}
               </div>
               <CardDescription className="text-wg-primary/60">
                 Your personal information and account details
@@ -176,7 +146,7 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
                         className="w-24 h-24 rounded-full object-cover"
                       />
                     ) : (
-                      <User className="h-12 w-12 text-wg-accent" />
+                      <User className="h-12 w-12 text-wg-primary" />
                     )}
                   </div>
                   {profile.isActive && (
@@ -245,7 +215,7 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="border-t border-wg-accent/20 pt-6">
+            <CardFooter className="border-t border-wg-accent/20 py-3">
               <div className="w-full">
                 <div className="flex items-center justify-between">
                   <div>
@@ -257,7 +227,7 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
                     <Button
                       variant="outline"
                       onClick={() => router.refresh()}
-                      className="border-wg-accent/30 text-wg-accent hover:bg-wg-accent/10"
+                      className="border-wg-accent/30 bg-wg-primary text-wg-neutral hover:bg-wg-secondary"
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Refresh Data
@@ -273,7 +243,7 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
             <Card className="bg-white border-wg-accent/20 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-wg-primary flex items-center gap-2">
-                  <Building className="h-5 w-5 text-wg-accent" />
+                  <Building className="h-5 w-5 text-wg-primary" />
                   Investment Plan
                 </CardTitle>
                 <CardDescription className="text-wg-primary/60">
@@ -316,7 +286,7 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-wg-primary/60">
-                        <DollarSign className="h-4 w-4" />
+                        <Banknote className="h-4 w-4" />
                         Investment Range
                       </div>
                       <p className="text-wg-primary font-medium">
@@ -359,7 +329,7 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
                       </div>
                       <p className="text-wg-primary font-medium">
                         {formatDate(
-                          new Date(profile?.investmentCategory?.createdAt ?? '')
+                          new Date(profile?.investmentCategory?.createdAt ?? "")
                         )}
                       </p>
                     </div>
@@ -412,64 +382,12 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
 
         {/* Right Column - Account Actions */}
         <div className="space-y-6">
-          {/* Account Security Card */}
-          <Card className="bg-white border-wg-accent/20 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-wg-primary flex items-center gap-2">
-                <Lock className="h-5 w-5 text-wg-accent" />
-                Account Security
-              </CardTitle>
-              <CardDescription className="text-wg-primary/60">
-                Manage your account security settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <h4 className="font-semibold text-wg-primary">
-                  Password Security
-                </h4>
-                <p className="text-sm text-wg-primary/60">
-                  Change your password regularly to keep your account secure
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-semibold text-wg-primary">
-                  Two-Factor Authentication
-                </h4>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-wg-primary/60">
-                    Status: Not enabled
-                  </span>
-                  <Badge variant="outline" className="border-red-300 text-red-600">
-                    Recommended
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-3">
-              <Button
-                onClick={handleResetPassword}
-                className="w-full bg-wg-accent text-white hover:bg-wg-accent/90"
-              >
-                <Lock className="h-4 w-4 mr-2" />
-                Reset Password
-                <ExternalLink className="h-4 w-4 ml-2" />
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full border-wg-accent/30 text-wg-accent hover:bg-wg-accent/10"
-              >
-                Enable 2FA
-              </Button>
-            </CardFooter>
-          </Card>
 
           {/* Account Status Card */}
           <Card className="bg-white border-wg-accent/20 shadow-sm">
             <CardHeader>
               <CardTitle className="text-wg-primary flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-wg-accent" />
+                <CheckCircle className="h-5 w-5 text-wg-primary" />
                 Account Status
               </CardTitle>
             </CardHeader>
@@ -526,41 +444,8 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
             </CardContent>
           </Card>
 
-          {/* Quick Actions Card */}
-          <Card className="bg-white border-wg-accent/20 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-wg-primary">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start border-wg-accent/30 text-wg-accent hover:bg-wg-accent/10"
-                onClick={() => router.push("/dashboard")}
-              >
-                <TrendingUp className="h-4 w-4 mr-2" />
-                View Dashboard
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start border-wg-accent/30 text-wg-accent hover:bg-wg-accent/10"
-                onClick={() => router.push("/investments")}
-              >
-                <Building className="h-4 w-4 mr-2" />
-                My Investments
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start border-wg-accent/30 text-wg-accent hover:bg-wg-accent/10"
-                onClick={() => router.push("/transactions")}
-              >
-                <DollarSign className="h-4 w-4 mr-2" />
-                Transaction History
-              </Button>
-            </CardContent>
-          </Card>
-
           {/* Support Card */}
-          <Card className="bg-white border-wg-accent/20 shadow-sm">
+          {/* <Card className="bg-white border-wg-accent/20 shadow-sm">
             <CardHeader>
               <CardTitle className="text-wg-primary">Need Help?</CardTitle>
             </CardHeader>
@@ -571,21 +456,21 @@ const SettingsClient: React.FC<SettingsClientProps> = ({
               <div className="space-y-2">
                 <Button
                   variant="outline"
-                  className="w-full border-wg-accent/30 text-wg-accent hover:bg-wg-accent/10"
+                  className="w-full border-wg-accent/30 text-wg-primary hover:bg-wg-secondary"
                   onClick={() => router.push("/support")}
                 >
                   Contact Support
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full border-wg-accent/30 text-wg-accent hover:bg-wg-accent/10"
+                  className="w-full border-wg-accent/30 text-wg-primary hover:bg-wg-secondary"
                   onClick={() => router.push("/faq")}
                 >
                   View FAQ
                 </Button>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>

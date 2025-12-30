@@ -345,6 +345,7 @@ export async function getProfile(userId: string) {
         investmentCategory: true
       }
     })
+    console.log(data)
 
     if (!data) {
       return {
