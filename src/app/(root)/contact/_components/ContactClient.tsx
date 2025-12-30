@@ -32,10 +32,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
-// EmailJS configuration
-const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || 'your_service_id';
-const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || 'your_template_id';
-const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || 'your_public_key';
+// EmailJS configuration - Make sure these are set in your .env.local file
+const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
 
 const ContactClient = () => {
   const [formData, setFormData] = useState({
@@ -50,6 +50,7 @@ const ContactClient = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isEmailJSLoaded, setIsEmailJSLoaded] = useState(false);
+  const [emailJSError, setEmailJSError] = useState<string | null>(null);
 
   // WhatsApp contact info
   const WHATSAPP_NUMBER = '2348035026480'; // Remove leading zero and country code
@@ -139,6 +140,13 @@ const ContactClient = () => {
   useEffect(() => {
     setIsClient(true);
     
+    // Check if EmailJS is configured
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+      console.warn('EmailJS is not configured. Check your .env.local file.');
+      setEmailJSError('EmailJS is not configured. Contact form will use fallback.');
+      return;
+    }
+    
     // Load EmailJS script
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
@@ -147,40 +155,94 @@ const ContactClient = () => {
     script.onload = () => {
       // Initialize EmailJS
       if (window.emailjs) {
-        window.emailjs.init(EMAILJS_PUBLIC_KEY);
-        setIsEmailJSLoaded(true);
+        try {
+          window.emailjs.init(EMAILJS_PUBLIC_KEY);
+          setIsEmailJSLoaded(true);
+          setEmailJSError(null);
+          console.log('EmailJS loaded successfully');
+        } catch (error) {
+          console.error('EmailJS initialization failed:', error);
+          setEmailJSError('EmailJS initialization failed');
+        }
+      } else {
+        console.error('EmailJS library not found');
+        setEmailJSError('EmailJS library failed to load');
       }
+    };
+    
+    script.onerror = () => {
+      console.error('Failed to load EmailJS script');
+      setEmailJSError('Failed to load EmailJS script');
     };
     
     document.head.appendChild(script);
     
     return () => {
-      document.head.removeChild(script);
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
     };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setEmailJSError(null);
     
     try {
-      // If EmailJS is configured, use it
+      // Format current time
+      const currentTime = new Date();
+      const formattedTime = currentTime.toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      
+      // If EmailJS is configured and loaded, use it
       if (isEmailJSLoaded && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID) {
-        await window.emailjs.send(
+        console.log('Attempting to send email via EmailJS...');
+        
+        // Match the template variables exactly as in your email template
+        const templateParams = {
+          name: formData.name,
+          time: formattedTime,
+          message: formData.message,
+          email: formData.email,
+          phone: formData.phone || 'Not provided',
+          subject: formData.subject || 'No subject provided'
+        };
+        
+        console.log('Template params:', templateParams);
+        
+        const result = await window.emailjs.send(
           EMAILJS_SERVICE_ID,
           EMAILJS_TEMPLATE_ID,
-          {
-            from_name: formData.name,
-            from_email: formData.email,
-            phone: formData.phone,
-            subject: formData.subject,
-            message: formData.message,
-            to_email: EMAIL_ADDRESS,
-          }
+          templateParams
         );
+        
+        console.log('EmailJS result:', result);
+        
+        if (result.status === 200) {
+          console.log('Email sent successfully');
+        } else {
+          throw new Error(`EmailJS returned status: ${result.status}`);
+        }
       } else {
-        // Fallback to regular form submission
-        console.log('EmailJS not configured, would send:', formData);
+        // Fallback to console log and simulate success
+        console.warn('EmailJS not available, using fallback');
+        console.log('Contact form submission:', {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          subject: formData.subject,
+          message: formData.message,
+          time: formattedTime
+        });
+        
+        // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
       
@@ -199,10 +261,25 @@ const ContactClient = () => {
         });
       }, 5000);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending email:', error);
       setIsSubmitting(false);
-      alert('There was an error sending your message. Please try again or contact us directly.');
+      
+      // Provide more specific error messages
+      let errorMessage = 'There was an error sending your message. Please try again or contact us directly.';
+      
+      if (error?.status === 0) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error?.text?.includes('Invalid template ID')) {
+        errorMessage = 'Email template configuration error. Please contact support.';
+      } else if (error?.text?.includes('Invalid service ID')) {
+        errorMessage = 'Email service configuration error. Please contact support.';
+      } else if (error?.text?.includes('Invalid public key')) {
+        errorMessage = 'Email service authentication error. Please contact support.';
+      }
+      
+      setEmailJSError(errorMessage);
+      alert(errorMessage);
     }
   };
 
@@ -369,21 +446,53 @@ const ContactClient = () => {
                 </CardHeader>
                 
                 <CardContent>
+                  {/* EmailJS Status Warning */}
+                  {emailJSError && !isSubmitted && (
+                    <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-full bg-amber-100">
+                          <Mail className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-amber-800 mb-1">Note:</h4>
+                          <p className="text-amber-700 text-sm">
+                            {emailJSError.includes('not configured') 
+                              ? 'Email service is in testing mode. Your message will be logged but not sent.'
+                              : emailJSError}
+                          </p>
+                          <p className="text-amber-600 text-xs mt-2">
+                            For immediate assistance, please use WhatsApp or call us directly.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {isSubmitted ? (
                     <div className="text-center py-12">
                       <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-wg-primary/10 to-wg-secondary/10 mb-6">
                         <CheckCircle className="h-8 w-8 text-wg-secondary" />
                       </div>
-                      <h3 className="text-2xl font-bold text-wg-primary mb-3">Message Sent Successfully!</h3>
+                      <h3 className="text-2xl font-bold text-wg-primary mb-3">Message Received!</h3>
                       <p className="text-wg-primary/70 mb-6">
                         Thank you for contacting Water Grove. Our team will respond to your inquiry within 24 hours.
                       </p>
-                      <Button 
-                        onClick={() => setIsSubmitted(false)}
-                        className="bg-wg-primary hover:bg-wg-primary/90 text-wg-neutral font-bold px-8 py-6 rounded-xl"
-                      >
-                        Send Another Message
-                      </Button>
+                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <Button 
+                          onClick={() => setIsSubmitted(false)}
+                          className="bg-wg-primary hover:bg-wg-primary/90 text-wg-neutral font-bold px-6 py-6 rounded-xl"
+                        >
+                          Send Another Message
+                        </Button>
+                        <Button 
+                          onClick={openWhatsApp}
+                          variant="outline"
+                          className="border-wg-primary text-wg-primary hover:bg-wg-primary/10 px-6 py-6 rounded-xl"
+                        >
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          Chat on WhatsApp
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -502,6 +611,19 @@ const ContactClient = () => {
                           </>
                         )}
                       </Button>
+                      
+                      <div className="text-center mt-4">
+                        <p className="text-xs text-wg-primary/60">
+                          Having trouble with the form? 
+                          <button 
+                            type="button"
+                            onClick={openWhatsApp}
+                            className="text-wg-accent hover:underline ml-1"
+                          >
+                            Chat with us on WhatsApp instead
+                          </button>
+                        </p>
+                      </div>
                     </form>
                   )}
                 </CardContent>
@@ -572,7 +694,52 @@ const ContactClient = () => {
                 </CardContent>
               </Card>
               
-              
+              {/* Quick Action Buttons */}
+              <Card className="bg-white border border-wg-primary/10">
+                <CardHeader>
+                  <CardTitle className="text-xl text-wg-primary">Quick Actions</CardTitle>
+                  <CardDescription className="text-wg-primary/70">
+                    Common inquiries - connect instantly
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button 
+                      onClick={() => openWhatsAppWithCustomMessage('Investment Information')}
+                      variant="outline" 
+                      className="border-wg-primary/20 hover:border-wg-accent text-wg-primary hover:bg-wg-primary/5 h-auto py-3"
+                    >
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Investment Info
+                    </Button>
+                    <Button 
+                      onClick={() => openWhatsAppWithCustomMessage('Account Support')}
+                      variant="outline" 
+                      className="border-wg-primary/20 hover:border-wg-accent text-wg-primary hover:bg-wg-primary/5 h-auto py-3"
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Account Help
+                    </Button>
+                    <Button 
+                      onClick={() => openWhatsAppWithCustomMessage('Withdrawal Issues')}
+                      variant="outline" 
+                      className="border-wg-primary/20 hover:border-wg-accent text-wg-primary hover:bg-wg-primary/5 h-auto py-3"
+                    >
+                      <Shield className="h-4 w-4 mr-2" />
+                      Withdrawal
+                    </Button>
+                    <Button 
+                      onClick={() => openWhatsAppWithCustomMessage('Technical Support')}
+                      variant="outline" 
+                      className="border-wg-primary/20 hover:border-wg-accent text-wg-primary hover:bg-wg-primary/5 h-auto py-3"
+                    >
+                      <Headset className="h-4 w-4 mr-2" />
+                      Technical
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
