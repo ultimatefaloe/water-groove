@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { resolveServerAuth } from "@/lib/server/auth0-server";
 import { DashboardOverviewData, CategoryDto, BankDetails, ApiResponse, TransactionResponse, TransactionQueryParams, InvestmentDto } from "@/types/type"
-import { mapCategoryToDto, mapInvestmentToDto, mapInvestmentWithCategoryToDto, mapTransactionToAdminRow, mapTransactionToDto, mapUserToDto } from '@/utils/mapper';
+import { mapCategoryToDto, mapInvestmentToDto, mapInvestmentWithCategoryToDto, mapTransactionToAdminRow, mapTransactionToDto, mapUserProfileToDto, mapUserToDto } from '@/utils/mapper';
 import { InvestmentStatus, Prisma, TransactionStatus, TransactionType } from "@prisma/client"
 
 async function authorizeUser(userId: string) {
@@ -324,4 +324,46 @@ export async function getInvestments(
     }
   }
 
+}
+
+export async function getProfile(userId: string) {
+  try {
+
+    if (!userId) {
+      return {
+        success: false,
+        message: "UserId is required",
+        data: null
+      }
+    }
+
+    const data = await prisma.user.findUnique({
+      where: {
+        id: userId
+      },
+      include: {
+        investmentCategory: true
+      }
+    })
+
+    if (!data) {
+      return {
+        success: false,
+        message: "User not found",
+        data: null
+      }
+    }
+
+    return {
+      success: true,
+      message: "Profile retrieved",
+      data: mapUserProfileToDto(data)
+    }
+  } catch (error: any) {
+    console.log(error.message)
+    return {
+      sucess: false,
+      message: error.massage
+    }
+  }
 }

@@ -60,8 +60,9 @@ export function DashboardSidebar({
   );
   const WHATSAPP_NUMBER = "2348035026480";
 
-  const getSupportWhatsappLink = () =>
-    `https://wa.me/${WHATSAPP_NUMBER}?text=${SUPPORT_MESSAGE}`;
+  const getSupportWhatsappLink = () => {
+    return window.location.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${SUPPORT_MESSAGE}`;
+  };
 
   return (
     <div className="flex h-screen w-64 lg:w-72 flex-col fixed bg-wg-neutral border-r border-wg-accent">

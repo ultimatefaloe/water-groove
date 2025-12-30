@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { Admin, Investment, InvestorBalance, InvestmentCategory, PlatformBankAccount, Transaction, User } from "@prisma/client"
 import { Prisma } from "@prisma/client"
-import { AdminDto, BankDetails, InvestmenCrontDto, InvestorBalanceDto, CategoryDto, InvestmentDto, InvestmentWithCategoryDto, TransactionDto, UserDto } from "@/types/type"
+import { AdminDto, BankDetails, InvestmenCrontDto, InvestorBalanceDto, CategoryDto, InvestmentDto, InvestmentWithCategoryDto, TransactionDto, UserDto, UserProfileSettings } from "@/types/type"
 import {
   AdminTransactionRow,
   AdminInvestmentRow,
@@ -29,6 +29,24 @@ export const mapUserToDto = (user: User): UserDto => ({
   createdAt: dateToISOString(user.createdAt)!,
   investmentCategoryId: user.investmentCategoryId! ?? undefined,
 })
+
+export const mapUserProfileToDto = (
+  user: User & { investmentCategory: InvestmentCategory | null }
+): UserProfileSettings => ({
+  id: user.id,
+  auth_id: user.auth_Id,
+  fullName: user.fullName,
+  email: user.email,
+  phone: user.phone ?? '',
+  picture: user.picture ?? '',
+  isActive: user.isActive,
+  createdAt: user.createdAt,
+  investmentCategory: user.investmentCategory
+    ? mapCategoryToDto(user.investmentCategory)
+    : undefined
+})
+
+
 
 export const mapAdminToDto = (admin: Admin): AdminDto => ({
   id: admin.id,
@@ -210,10 +228,10 @@ export function mapTransactionToAdminRow(
     withdrawalPenalty:
       tx.earlyWithdrawal && tx.withdrawalPenalty
         ? {
-            id: tx.withdrawalPenalty.id,
-            amount: Number(tx.withdrawalPenalty.amount),
-            percentage: Number(tx.withdrawalPenalty.percentage),
-          }
+          id: tx.withdrawalPenalty.id,
+          amount: Number(tx.withdrawalPenalty.amount),
+          percentage: Number(tx.withdrawalPenalty.percentage),
+        }
         : undefined,
   }
 }

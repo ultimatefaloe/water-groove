@@ -264,7 +264,7 @@ export interface CategoryDto {
   durationMonths: number
   description: string
   isActive?: boolean
-  createdAt?: string
+  createdAt?: string | Date
 }
 
 // ==============================
@@ -441,4 +441,16 @@ export interface CreateDeposit {
   investmentCatId: string,
   amount: number,
   description: string,
+}
+
+export interface UserProfileSettings {
+  id: string;
+  auth_id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  picture: string;
+  investmentCategory?: CategoryDto;
+  isActive: boolean;
+  createdAt: Date
 }
