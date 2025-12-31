@@ -46,28 +46,9 @@ const CTASection = () => {
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link href="/register">
-              <Button size="lg" className="bg-wg-secondary hover:bg-wg-secondary/90 text-wg-primary font-bold px-8 py-6 text-base rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                Start Investing Today <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/investment-sectors">
-              <Button size="lg" variant="outline" className="border  bg-wg-primary text-wg-neutral hover:bg-wg-neutral/10 px-8 py-6 text-base rounded-xl hover:scale-105 transition-all duration-300">
-                View Packages
-              </Button>
-            </Link>
-          </div>
           
-          {/* Risk disclaimer */}
-          <div className="mt-10 pt-8 border-t border-wg-neutral/20">
-            <p className="text-wg-neutral/80 text-sm mb-2">
-              <span className="font-bold">Important:</span> All investments carry risk. Water Grove does not guarantee profits but applies structured risk management.
-            </p>
-            <p className="text-wg-neutral/60 text-xs">
-              Past performance is not indicative of future results. Please review investment terms carefully.
-            </p>
-          </div>
+          
+          
         </div>
       </div>
     </section>
