@@ -164,7 +164,7 @@ export function Footer() {
               </li>
               <li>
                 <Link 
-                  href="/contact-us" 
+                  href="/contact" 
                   className="hover:text-wg-accent transition-colors flex items-center gap-2 group"
                 >
                   <CheckCircle className="h-3 w-3 text-wg-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -180,7 +180,7 @@ export function Footer() {
             <ul className="space-y-3 text-sm text-wg-primary/80">
               <li>
                 <Link 
-                  href="/register" 
+                  href="/auth/login" 
                   className="hover:text-wg-accent transition-colors flex items-center gap-2 group"
                 >
                   <CheckCircle className="h-3 w-3 text-wg-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -205,7 +205,7 @@ export function Footer() {
                   Investor Dashboard
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link 
                   href="/faq" 
                   className="hover:text-wg-accent transition-colors flex items-center gap-2 group"
@@ -213,7 +213,7 @@ export function Footer() {
                   <CheckCircle className="h-3 w-3 text-wg-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
                   FAQ
                 </Link>
-              </li>
+              </li> */}
             </ul>
 
             {/* Minimum Investment Badge */}
@@ -267,7 +267,7 @@ export function Footer() {
 
             {/* Quick Contact CTA */}
             <div className="mt-6">
-              <Link href="/contact-us">
+              <Link href="/contact">
                 <Button 
                   variant="outline" 
                   className="w-full border-wg-primary/30 text-wg-primary hover:bg-wg-primary/10 hover:text-wg-primary hover:border-wg-accent transition-all duration-300"
